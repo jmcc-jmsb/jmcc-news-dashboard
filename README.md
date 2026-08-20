@@ -27,7 +27,7 @@ npm run dev
 
 Node >= 22.12 required.
 
-## Current state — Sprint 0 / 0.5 complete
+## Current state — Sprints 0, 0.5 and 1 complete
 
 The re-skinned prototype is ported to typed React and renders on fixture data.
 
@@ -37,6 +37,9 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
 - ✅ Specs content moved to `src/content/specs.json`, zod-validated, status-gated
 - ✅ Monospace face fully removed; `tabular-nums` for digit alignment
 - ✅ Zero raw hex outside the token blocks; zero rounded corners except `.badge` / `.check-circle`
+- ✅ AI relevance: phrase matcher, badge, and "AI Angle" feed filter (fixture-driven)
+- ✅ Lighthouse on the production build: **performance 94, accessibility 100,
+  best practices 100, SEO 100** (Sprint 1 gate is ≥ 90 / ≥ 95)
 - ⬜ Supabase, ingest, cron — Sprint 2
 - ⬜ Live API routes, Sponsor Watch, AI filter — Sprint 3
 - ⬜ Resend weekly digest — Sprint 4
@@ -59,6 +62,12 @@ runs; the Vercel account is on the Hobby plan, which permits one cron run per
 day, and Vercel rejects a more frequent schedule at deploy time rather than
 degrading. This is an accepted trade — see `docs/CRON_OPTIONS.md` for the cost
 and the two ways back to four runs.
+
+**AI relevance is decided at ingest, never at render.** `lib/ingest/ai-relevance.ts`
+matches a phrase list against title + description. It deliberately never fires on
+a bare "AI" token — that string appears inside ordinary words and unrelated
+acronyms. The UI badges matches and offers a filter; it does not reorder the
+feed, so recency stays the primary sort.
 
 **Copyright.** Title, description, and URL only. Never full article bodies —
 that is republication. Always link out.

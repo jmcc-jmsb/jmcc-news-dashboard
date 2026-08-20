@@ -5,6 +5,12 @@
 // Delta from the jmcc-website original:
 //   1. `lang` hard-coded 'en' (brief §1).
 //   2. A news-source attribution line added to the bottom bar (brief §6).
+//   3. text-cream/50 and text-cream/35 raised to text-cream/70. Those two
+//      opacities give 3.69:1 and 2.39:1 against --color-primary, and WCAG AA
+//      needs 4.5:1 for text this size; /70 is 6.21:1. Lighthouse flagged all
+//      four instances. ⚠ This bug is inherited — it is still live in
+//      jmcc-website, where the same classes sit on the same maroon. Fix it
+//      there too, and do not re-introduce it when re-copying this file.
 // Links are otherwise untouched — ../i18n/utils.ts makes getLocalizedPath()
 // absolute, so /faq and /privacy resolve to the main site rather than 404ing here.
 import { Image } from 'astro:assets';
@@ -44,7 +50,7 @@ const line2 = `${address.city}, ${address.province} ${address.postalCode}`;
           />
         </div>
         <p class="font-unbounded font-bold text-xl text-gold mb-1">{t('footer.tagline')}</p>
-        <p class="font-montserrat text-xs text-cream/50 leading-relaxed">{t('footer.tagline-sub')}</p>
+        <p class="font-montserrat text-xs text-cream/70 leading-relaxed">{t('footer.tagline-sub')}</p>
       </div>
 
       <!-- Contact -->
@@ -102,7 +108,7 @@ const line2 = `${address.city}, ${address.province} ${address.postalCode}`;
     <!-- News-source attribution (brief §6). Headlines and links only are stored;
          full article text is never copied (brief §10, Copyright), so this credits
          the publishers and states plainly that the reader is being sent to them. -->
-    <p class="font-montserrat text-xs text-cream/50 leading-relaxed pt-6 max-w-3xl">
+    <p class="font-montserrat text-xs text-cream/70 leading-relaxed pt-6 max-w-3xl">
       Headlines and summaries are aggregated from NewsData.io, Marketaux, and the
       public RSS feeds of McKinsey, BCG, Strategy+Business, Deloitte Insights, and
       PwC. All rights remain with the original publishers. Every item links to the
@@ -111,9 +117,9 @@ const line2 = `${address.city}, ${address.province} ${address.postalCode}`;
 
     <!-- Bottom bar -->
     <div class="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <p class="font-montserrat text-xs text-cream/35">{copyright}</p>
+      <p class="font-montserrat text-xs text-cream/70">{copyright}</p>
       <div class="flex items-center gap-2">
-        <span class="font-montserrat text-xs text-cream/35">{t('footer.governed-by')}</span>
+        <span class="font-montserrat text-xs text-cream/70">{t('footer.governed-by')}</span>
         <Image
           src={casaLogo}
           alt="CASA JMSB"
