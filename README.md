@@ -41,10 +41,14 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
 - ✅ Lighthouse on the production build: **performance 94, accessibility 100,
   best practices 100, SEO 100** (Sprint 1 gate is ≥ 90 / ≥ 95)
 - ⬜ Supabase, ingest, cron — Sprint 2
-- ⬜ Live API routes, Sponsor Watch, AI filter — Sprint 3
+- ✅ Read APIs (`/api/news`, `/api/reports`, `/api/sponsors`), Sponsor Watch,
+  live AI filter, honest empty/unavailable states — Sprint 3
+- ⬜ Applying migrations and a real ingest run — blocked on credentials
 - ⬜ Resend weekly digest — Sprint 4
 
-Everything renders on `src/lib/fixtures.ts`. There is no database yet.
+The UI now reads from the API rather than importing fixtures. With no database
+configured the feed renders an honest "not connected yet" state; set
+`PUBLIC_USE_FIXTURES=true` to demo on sample data, which is labelled on screen.
 
 ## Architecture notes
 
