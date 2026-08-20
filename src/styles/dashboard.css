@@ -242,6 +242,26 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* Sample-data notice. Deliberately loud: the fixtures are invented headlines
+   under real mastheads, so a reader must never mistake them for news. Gold on
+   black is the AA-safe pairing in both themes (12.19:1). */
+.sample-banner {
+  background: var(--cta);
+  color: var(--cta-ink);
+  border: 1px solid var(--cta);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.sample-banner strong {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  margin-right: 6px;
+}
+
 /* ----------- DISCIPLINE BAR ----------- */
 .discipline-bar {
   background: var(--bg-sunken);

@@ -96,6 +96,21 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 - Before adding a feed, verify it returns 200 AND parses with rss-parser.
   A 200 that returns HTML is the common failure, not a 404.
 
+## The read path
+- Components never import `lib/fixtures.ts`. They fetch `/api/news`,
+  `/api/reports` and `/api/sponsors`; only the server touches the database.
+- **Never fall back to fixtures automatically.** They are invented headlines
+  under real mastheads, so a silent fallback turns an outage into fabricated
+  news. Sample data is opt-in via `PUBLIC_USE_FIXTURES`, off by default, and
+  every sample response is marked `origin: "sample"` and banner-ed on screen.
+- "Unavailable" and "empty" are different states and must stay different. An
+  empty feed is a fact about the news; an unavailable one is a fact about us,
+  and conflating them is how a broken feed goes unnoticed for a week.
+- Error copy shown to delegates never names environment variables. Operator
+  detail goes to the console; the reader gets plain English.
+- The AI filter is applied in the read query (`where ai_relevant`), never by
+  re-sorting. Ordering stays `published_at desc` in every case.
+
 ## Shared Supabase project with jmcc-portal
 This repo and `jmcc-portal` share one Supabase project. The Portal was there
 first and owns `competitions`, `disciplines`, `profiles`, `teams`, and the

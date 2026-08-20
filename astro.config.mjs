@@ -40,6 +40,17 @@ export default defineConfig({
       PUBLIC_SUPABASE_URL: envField.string({ context: 'client', access: 'public', optional: true }),
       PUBLIC_SUPABASE_PUBLISHABLE_KEY: envField.string({ context: 'client', access: 'public', optional: true }),
 
+      /* Serves lib/fixtures.ts from the read APIs when no database is
+         configured. DEFAULT FALSE, deliberately.
+
+         The fixtures are invented headlines attributed to real publishers —
+         Reuters, Bloomberg, WSJ. Falling back to them silently in production
+         would mean a Supabase outage quietly turns the dashboard into
+         fabricated news under real mastheads, which is worse than an empty
+         feed by a wide margin. When this IS on, every response is marked
+         sample:true and the UI says so on screen. */
+      PUBLIC_USE_FIXTURES: envField.boolean({ context: 'client', access: 'public', default: false }),
+
       SUPABASE_SECRET_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       NEWSDATA_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       MARKETAUX_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),

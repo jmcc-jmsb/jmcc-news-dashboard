@@ -1,10 +1,9 @@
 // ABOUTME: Root React island — owns theme, tab, discipline, bookmarks, and case history.
 // ABOUTME: Mounted client:only, so reading localStorage and window during render is safe here.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Bookmark, DisciplineId, FeedItem, HistoryItem, Tab, Theme } from '../../lib/types';
 import { isDisciplineId } from '../../lib/disciplines';
-import { ARTICLES, REPORTS } from '../../lib/fixtures';
 import { HAS_ANY_PUBLISHED_SPECS } from '../../lib/specs';
 import { storage } from '../../lib/storage';
 import { DashboardBar } from './DashboardBar';
@@ -111,16 +110,19 @@ export default function Dashboard() {
     setHistory((curr) => curr.map((h) => (h.id === id ? { ...h, ...fields } : h)));
   }, []);
 
-  /* Filtering, deliberately not sorting. §3f's default is badge-don't-reorder:
-     recency stays the primary sort so the feed behaves the way a feed should,
-     and the AI angle is one tap away rather than silently rearranging things.
-     Switching to a pinned-above-the-rest treatment later is a read-query
-     change, not a schema one. */
-  const disciplineArticles = ARTICLES[discipline] ?? [];
-  const aiCount = disciplineArticles.filter((a) => a.aiRelevant).length;
-  const visibleArticles = aiOnly
-    ? disciplineArticles.filter((a) => a.aiRelevant)
-    : disciplineArticles;
+  /* Filtering now happens in the database, not here: /api/news takes ?ai=1 and
+     adds `where ai_relevant`. It is still a FILTER and not a sort — §3f's
+     default is badge-don't-reorder, so the read query keeps published_at desc
+     as the ordering in every case.
+
+     The count for the pill comes back up from NewsView, because only the fetch
+     knows how many matched. While the unfiltered feed is loaded we can count it
+     directly; once the filter is on, every loaded row matches by definition. */
+  const [loadedArticles, setLoadedArticles] = useState<FeedItem[]>([]);
+  const aiCount = useMemo(
+    () => (aiOnly ? loadedArticles.length : loadedArticles.filter((a) => a.aiRelevant).length),
+    [loadedArticles, aiOnly],
+  );
 
   // Client-side so the date is the reader's, not the build machine's.
   const now = new Date();
@@ -167,12 +169,11 @@ export default function Dashboard() {
         {tab === 'news' && (
           <NewsView
             discipline={discipline}
-            articles={visibleArticles}
             aiOnly={aiOnly}
             clearAiFilter={() => setAiOnly(false)}
-            reports={REPORTS[discipline] ?? []}
             isBookmarked={isBookmarked}
             toggleBookmark={toggleBookmark}
+            onArticlesChange={setLoadedArticles}
           />
         )}
         {tab === 'specs' && <SpecsView discipline={discipline} />}
