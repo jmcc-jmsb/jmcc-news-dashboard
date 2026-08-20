@@ -15,7 +15,10 @@ const PAGE_SIZE = 12;
 
 interface Props {
   discipline: DisciplineId;
+  /** Already filtered by the AI toggle — this component does not re-filter. */
   articles: FeedItem[];
+  aiOnly: boolean;
+  clearAiFilter: () => void;
   reports: FeedItem[];
   isBookmarked: (id: string) => boolean;
   toggleBookmark: (item: FeedItem) => void;
@@ -26,19 +29,27 @@ interface Props {
  * `now` was a new Date() set on mount — so it always said "just now" no matter
  * how stale the data was.
  *
- * Ingest actually runs four times a day and the free NewsData tier is on a
- * 12-hour delay (brief §10), so this reads the newest ingested_at off the rows
- * themselves. Until Sprint 2 the fixtures carry no ingested_at, and the honest
+ * Ingest actually runs once a day (see AGENTS.md — the Vercel Hobby plan
+ * permits one cron run daily) and the free NewsData tier is on a 12-hour delay
+ * on top of that, so this reads the newest ingested_at off the rows themselves. Until Sprint 2 the fixtures carry no ingested_at, and the honest
  * answer then is to say nothing about freshness rather than to invent it.
  */
 function freshnessLine(articles: FeedItem[]): string | null {
   const stamps = articles.map((a) => a.ingestedAt).filter((s): s is string => Boolean(s));
   if (stamps.length === 0) return null;
   const newest = stamps.reduce((a, b) => (a > b ? a : b));
-  return `Updated 4× daily · last refresh ${relTime(newest)}`;
+  return `Updated daily · last refresh ${relTime(newest)}`;
 }
 
-export function NewsView({ discipline, articles, reports, isBookmarked, toggleBookmark }: Props) {
+export function NewsView({
+  discipline,
+  articles,
+  aiOnly,
+  clearAiFilter,
+  reports,
+  isBookmarked,
+  toggleBookmark,
+}: Props) {
   const disciplineLabel = labelFor(discipline);
 
   const [loading, setLoading] = useState(true);
@@ -55,6 +66,10 @@ export function NewsView({ discipline, articles, reports, isBookmarked, toggleBo
     return () => clearTimeout(t);
   }, [discipline, refreshKey]);
 
+  // Toggling the filter changes the list length, so paging restarts. It does
+  // not re-trigger the fetch above — nothing was fetched.
+  useEffect(() => setVisible(PAGE_SIZE), [aiOnly]);
+
   const shown = articles.slice(0, visible);
   const canLoadMore = visible < articles.length;
   const freshness = freshnessLine(articles);
@@ -69,7 +84,7 @@ export function NewsView({ discipline, articles, reports, isBookmarked, toggleBo
             <p className="section-sub" aria-live="polite">
               {loading
                 ? 'Loading articles…'
-                : `${articles.length} article${articles.length !== 1 ? 's' : ''}${freshness ? ` · ${freshness}` : ''}`}
+                : `${articles.length} article${articles.length !== 1 ? 's' : ''}${aiOnly ? ' with an AI angle' : ''}${freshness ? ` · ${freshness}` : ''}`}
             </p>
           </div>
           <button className="ghost-btn" onClick={() => setRefreshKey((k) => k + 1)}>
@@ -82,13 +97,24 @@ export function NewsView({ discipline, articles, reports, isBookmarked, toggleBo
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} />)
           ) : shown.length === 0 ? (
-            <div className="empty">
-              <p>No recent articles found for {disciplineLabel}.</p>
-              <button className="ghost-btn" onClick={() => setRefreshKey((k) => k + 1)}>
-                {Icon.refresh}
-                <span>Check again</span>
-              </button>
-            </div>
+            /* Two different problems, two different ways out: an empty
+               discipline is worth retrying, an over-narrow filter is not. */
+            aiOnly ? (
+              <div className="empty">
+                <p>No {disciplineLabel} articles have an AI angle right now.</p>
+                <button className="ghost-btn" onClick={clearAiFilter}>
+                  <span>Show all {disciplineLabel} articles</span>
+                </button>
+              </div>
+            ) : (
+              <div className="empty">
+                <p>No recent articles found for {disciplineLabel}.</p>
+                <button className="ghost-btn" onClick={() => setRefreshKey((k) => k + 1)}>
+                  {Icon.refresh}
+                  <span>Check again</span>
+                </button>
+              </div>
+            )
           ) : (
             shown.map((a) => (
               <ArticleCard

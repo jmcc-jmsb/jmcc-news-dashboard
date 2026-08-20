@@ -18,13 +18,16 @@ import { SpecsView } from './SpecsView';
    there is no server render to crash — and no hydration mismatch from the
    localStorage initialisers below either. That directive is doing real work;
    do not swap it for client:load. */
-function readQuery(): { discipline: DisciplineId; tab: Tab } {
+function readQuery(): { discipline: DisciplineId; tab: Tab; aiOnly: boolean } {
   const p = new URLSearchParams(window.location.search);
   const d = p.get('discipline') ?? '';
   const t = p.get('tab') ?? '';
   return {
     discipline: isDisciplineId(d) ? d : 'finance',
     tab: t === 'specs' || t === 'saved' ? t : 'news',
+    // In the URL so a filtered feed can be shared or bookmarked, the same way
+    // the discipline already is.
+    aiOnly: p.get('ai') === '1',
   };
 }
 
@@ -39,6 +42,7 @@ export default function Dashboard() {
   const initial = readQuery();
   const [discipline, setDiscipline] = useState<DisciplineId>(initial.discipline);
   const [tab, setTab] = useState<Tab>(initial.tab);
+  const [aiOnly, setAiOnly] = useState(initial.aiOnly);
   const [theme, setTheme] = useState<Theme>(() => storage.readTheme());
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => storage.readBookmarks());
   const [history, setHistory] = useState<HistoryItem[]>(() => storage.readHistory());
@@ -50,8 +54,12 @@ export default function Dashboard() {
   useEffect(() => storage.writeBookmarks(bookmarks), [bookmarks]);
   useEffect(() => storage.writeHistory(history), [history]);
   useEffect(() => {
-    writeQuery({ discipline, tab: tab === 'news' ? null : tab });
-  }, [discipline, tab]);
+    writeQuery({
+      discipline,
+      tab: tab === 'news' ? null : tab,
+      ai: aiOnly ? '1' : null,
+    });
+  }, [discipline, tab, aiOnly]);
 
   /* With zero disciplines published the Technical Specs tab does not exist
      (brief §3c). A stale ?tab=specs URL would otherwise strand a reader on a
@@ -103,6 +111,17 @@ export default function Dashboard() {
     setHistory((curr) => curr.map((h) => (h.id === id ? { ...h, ...fields } : h)));
   }, []);
 
+  /* Filtering, deliberately not sorting. §3f's default is badge-don't-reorder:
+     recency stays the primary sort so the feed behaves the way a feed should,
+     and the AI angle is one tap away rather than silently rearranging things.
+     Switching to a pinned-above-the-rest treatment later is a read-query
+     change, not a schema one. */
+  const disciplineArticles = ARTICLES[discipline] ?? [];
+  const aiCount = disciplineArticles.filter((a) => a.aiRelevant).length;
+  const visibleArticles = aiOnly
+    ? disciplineArticles.filter((a) => a.aiRelevant)
+    : disciplineArticles;
+
   // Client-side so the date is the reader's, not the build machine's.
   const now = new Date();
   const edition = {
@@ -140,12 +159,17 @@ export default function Dashboard() {
           if (tab === 'saved') setTab('news');
         }}
         disabled={tab === 'saved'}
+        aiOnly={aiOnly}
+        setAiOnly={setAiOnly}
+        aiCount={aiCount}
       />
       <main className="main">
         {tab === 'news' && (
           <NewsView
             discipline={discipline}
-            articles={ARTICLES[discipline] ?? []}
+            articles={visibleArticles}
+            aiOnly={aiOnly}
+            clearAiFilter={() => setAiOnly(false)}
             reports={REPORTS[discipline] ?? []}
             isBookmarked={isBookmarked}
             toggleBookmark={toggleBookmark}
