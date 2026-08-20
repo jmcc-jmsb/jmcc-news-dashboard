@@ -22,6 +22,15 @@ export const prerender = true;
     theme flash. client:only removes the server render that causes all three,
     so none of them need defensive guards in the components themselves.
   */}
-  <Dashboard client:only="react" />
+  {/* The island is reserved a viewport of height before it exists.
+      client:only renders nothing on the server, so without this the Footer
+      paints at the top of an empty page and is then shoved down when React
+      mounts — measured as a cumulative layout shift of 1.119, which alone
+      cost ~16 Lighthouse performance points. Reserving the space costs
+      nothing and the shift disappears. Keep this in step with .app's
+      min-height in dashboard.css. */}
+  <div class="dash-mount">
+    <Dashboard client:only="react" />
+  </div>
   <Footer />
 </BaseLayout>

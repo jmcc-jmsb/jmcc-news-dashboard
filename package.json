@@ -11,7 +11,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test src/lib/*.test.ts",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"src/lib/**/*.test.ts\"",
     "astro": "astro"
   },
   "dependencies": {

@@ -4,6 +4,7 @@
 import type { FeedItem } from '../../../lib/types';
 import { absDate, relTime } from '../../../lib/format';
 import { highlight } from '../../../lib/highlight';
+import { AiBadge } from './AiBadge';
 import { BookmarkBtn } from './BookmarkBtn';
 import { Icon } from './Icon';
 
@@ -24,6 +25,7 @@ export function ArticleCard({ item, saved, onToggle, q = '' }: Props) {
           {relTime(item.publishedAt)}
         </time>
         <span className="meta-spacer"></span>
+        {item.aiRelevant && <AiBadge />}
         <span className="discipline-tag">{item.discipline}</span>
       </div>
       <h3 className="card-title">

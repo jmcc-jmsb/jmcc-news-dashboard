@@ -121,16 +121,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ----------- DASHBOARD BAR -----------
-   The prototype's <Header> is gone: Nav.astro is the site header now, and the
-   --header-* tokens went with it (brief §7, §12).
+/* Holds the island's space before it mounts — see the note in index.astro. */
+.dash-mount { min-height: 100vh; }
 
-   What could not go with it is everything in that header that was not site
-   chrome — the EDITION strip (§7 says keep it), the News/Saved/Specs tabs, the
-   theme toggle, and the bookmark count. Nav.astro has no notion of any of them.
-   So they live here instead, as a dashboard control bar sitting below the Nav
-   and styled off the dashboard's own surface tokens rather than a second set of
-   header tokens. It deliberately does not look like a second site header. */
+/* ----------- DASHBOARD BAR -----------
+   The prototype's <Header> is gone, and the --header-* tokens went with it
+   (brief §7, §12). The website's Nav.astro briefly replaced it and was then
+   removed too, on the owner's call — this is the dashboard, not the website.
+
+   So this bar is now the top of the page, and it carries everything that was
+   never site chrome to begin with: the EDITION strip (§7 says keep it), the
+   News/Saved/Specs tabs, the theme toggle, the bookmark count, and the
+   wordmark that replaced the nav's identity and its one link home. It is
+   styled off the dashboard's own surface tokens rather than a second set of
+   header tokens, so it reads as a control bar, not a site header. */
 .dash-bar {
   background: var(--bg-elev);
   border-bottom: 1px solid var(--line);
@@ -367,6 +371,39 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .meta-dot { color: var(--line-strong); }
 .meta-date { font-family: var(--font-sans); font-size: 11px; color: var(--ink-mute); }
 .meta-spacer { flex: 1; }
+/* Same treatment as .discipline-tag (brief §3f) — a tag, not an alarm. It sits
+   beside the discipline tag rather than replacing it, because a delegate
+   filtering on AI still needs to know which discipline they are reading. */
+.ai-badge {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cta-ink);
+  background: var(--cta);
+  border: 1px solid var(--cta);
+  padding: 2px 7px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* The filter pill. Separated from the discipline group by margin-left:auto so
+   it reads as a different kind of control — disciplines are a single choice,
+   this is an independent on/off. */
+.pill-ai {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.pill-ai .count {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.pill-ai:disabled { opacity: 0.45; }
+
 .discipline-tag {
   font-family: var(--font-sans);
   font-size: 10px;

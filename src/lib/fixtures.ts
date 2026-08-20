@@ -4,6 +4,7 @@
 import type { DisciplineId, FeedItem } from './types';
 import { DISCIPLINES } from './disciplines';
 import { h } from './format';
+import { isAiRelevant } from './ingest/ai-relevance';
 
 /* Rows are [title, source, publishedAt, description]. Kept as tuples rather
    than objects because that is how the prototype shipped them and the shape is
@@ -194,18 +195,14 @@ const REPORTS_RAW: Partial<Record<DisciplineId, ReportRow[]>> = {
   ],
 };
 
-/* AI-relevant fixtures (brief §3f). Flagged by hand here so the badge and the
-   "AI Angle" filter can be built and tested before ingest exists. At runtime
-   this boolean is set by keyword match in lib/ingest/ai-relevance.ts — never
-   guessed at render time. Keys are `${disciplineId}:${index}` into the raw rows. */
-const AI_RELEVANT_FIXTURES = new Set<string>([
-  'finance:2',
-  'strategy:0',
-  'digital-strategy:0',
-  'digital-strategy:1',
-  'hr:1',
-  'marketing:3',
-]);
+/* AI relevance is DERIVED, not hand-listed (brief §3f). An earlier version of
+   this file carried a hardcoded set of keys; four of the six were not actually
+   about AI and it missed several that were. Running the real matcher over the
+   seed data instead means the fixtures demonstrate the same rule ingest will
+   apply in Sprint 2, and they cannot drift away from it.
+
+   Currently 7 of 92 seed articles match — enough to exercise the badge and the
+   filter, including disciplines where an AI angle is genuinely absent. */
 
 /* The URL is synthesised from the discipline and row index exactly as the
    prototype did. It has to stay that way: id = h(url), so changing the URL
@@ -223,7 +220,7 @@ function buildArticles(): Record<string, FeedItem[]> {
         discipline: d.label,
         disciplineId: d.id,
         type: 'article' as const,
-        aiRelevant: AI_RELEVANT_FIXTURES.has(`${d.id}:${i}`),
+        aiRelevant: isAiRelevant(title, description),
         sponsorId: null,
       };
     });
@@ -243,7 +240,7 @@ function buildReports(): Record<string, FeedItem[]> {
         discipline: d.label,
         disciplineId: d.id,
         type: 'report' as const,
-        aiRelevant: false,
+        aiRelevant: isAiRelevant(title, description),
         sponsorId: null,
       };
     });
