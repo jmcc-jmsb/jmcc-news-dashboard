@@ -83,6 +83,19 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 - The usual "schedule hourly and no-op" DST fix needs many runs per day and is
   therefore impossible on Hobby. Don't reach for it without a plan change.
 
+## Ingest sources
+- **The RSS feed list is DATA, in `news_sources` — never a code constant.** All
+  five feeds named in brief §10 were dead when checked on 2026-08-20 (four 404,
+  one 403). Only McKinsey survives, at a different URL than the brief gives.
+- Never name individual publishers in UI copy. The footer credits sources
+  generically for exactly this reason.
+- A dead feed records its failure in `news_sources.last_error` and the run
+  continues. One rotted URL must never abort ingest for every other source.
+- `last_error` is publicly readable, so scrub it before writing — see
+  `scrubError()` in lib/ingest/rss.ts.
+- Before adding a feed, verify it returns 200 AND parses with rss-parser.
+  A 200 that returns HTML is the common failure, not a 404.
+
 ## Shared Supabase project with jmcc-portal
 This repo and `jmcc-portal` share one Supabase project. The Portal was there
 first and owns `competitions`, `disciplines`, `profiles`, `teams`, and the

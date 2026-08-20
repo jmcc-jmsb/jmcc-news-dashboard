@@ -107,12 +107,16 @@ const line2 = `${address.city}, ${address.province} ${address.postalCode}`;
 
     <!-- News-source attribution (brief §6). Headlines and links only are stored;
          full article text is never copied (brief §10, Copyright), so this credits
-         the publishers and states plainly that the reader is being sent to them. -->
+         the publishers and states plainly that the reader is being sent to them.
+
+         Deliberately does NOT name individual publishers. It used to list the
+         five from brief §10 — and four of those feeds turned out to be dead, so
+         the credit was simply false. The live list is data, in news_sources;
+         hardcoding it here guarantees it goes stale again. -->
     <p class="font-montserrat text-xs text-cream/70 leading-relaxed pt-6 max-w-3xl">
-      Headlines and summaries are aggregated from NewsData.io, Marketaux, and the
-      public RSS feeds of McKinsey, BCG, Strategy+Business, Deloitte Insights, and
-      PwC. All rights remain with the original publishers. Every item links to the
-      source — JMCC does not host or reproduce full articles.
+      Headlines and summaries are aggregated from NewsData.io, Marketaux, and
+      publisher RSS feeds. All rights remain with the original publishers. Every
+      item links to the source — JMCC does not host or reproduce full articles.
     </p>
 
     <!-- Bottom bar -->
