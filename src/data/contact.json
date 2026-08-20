@@ -1,0 +1,32 @@
+{
+  "_note": "Site-wide contact details and social links. NO phone number — intentionally removed.",
+  "email": "info@wecompete.ca",
+  "address": {
+    "line1": "1450 Guy Street",
+    "room": "MB S1-455",
+    "city": "Montreal",
+    "province": "QC",
+    "postalCode": "H3H 0A1",
+    "_note": "JMCC office: MB S1-455, 1450 Guy Street (John Molson Building)."
+  },
+  "socials": [
+    {
+      "platform": "linkedin",
+      "url": "https://ca.linkedin.com/company/john-molson-competition-committee",
+      "handle": "John Molson Competition Committee"
+    },
+    {
+      "platform": "facebook",
+      "url": "https://www.facebook.com/jmcconline/",
+      "handle": "@jmcconline"
+    },
+    {
+      "platform": "instagram",
+      "url": "https://www.instagram.com/jmcconline/",
+      "handle": "@jmcconline"
+    }
+  ],
+  "contactFormTo": "info@wecompete.ca",
+  "_contactFormTo_note": "Destination for /contact submissions. contact.php reads this at runtime.",
+  "_vpInternal_note": "Incident reports go through the embedded Google Form, not email. No VP Internal address needed here."
+}

@@ -1,0 +1,353 @@
+/* ABOUTME: Global stylesheet — self-hosted fonts, Tailwind 4 theme tokens, base styles. */
+/* ABOUTME: All colors and font families are defined here as CSS variables; never use raw hex in components. */
+
+/* Self-hosted via @fontsource — no external CDN calls (required for cPanel hosting) */
+@import "@fontsource/unbounded/400.css";
+@import "@fontsource/unbounded/700.css";
+@import "@fontsource/unbounded/800.css";
+@import "@fontsource/montserrat/400.css";
+@import "@fontsource/montserrat/500.css";
+@import "@fontsource/montserrat/600.css";
+@import "@fontsource/montserrat/700.css";
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — token names match CLAUDE.md; add nothing outside this set */
+  --color-primary: #680009;
+  --color-cream: #f7f3ec;
+  --color-ink: #000000;
+  --color-border: #95323f;
+  --color-gold: #fabb20;
+  --color-sand: #d8af74;
+  --color-muted: #5e5c5a; /* ink tint — 6.02:1 on cream, AA pass */
+
+  --font-unbounded: "Unbounded", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+
+  /* ── Motion tokens (motion-layer.md §"Motion tokens") ──────────────────────
+     Never write a raw duration or cubic-bezier in a component. Cohesion comes
+     from shared timing: two effects on the same easing feel like one system. */
+
+  /* Durations */
+  --duration-instant: 120ms; /* button press, focus ring */
+  --duration-quick: 180ms; /* hover, small state change */
+  --duration-base: 280ms; /* the default — most transitions */
+  --duration-slow: 480ms; /* section reveals, larger movement */
+  --duration-draw: 600ms; /* scratch stroke-draw only */
+
+  /* Tailwind resolves `duration-*` utilities from the --transition-duration-*
+     namespace, not --duration-*. Re-exported here so `duration-base` works as a
+     utility and var(--duration-base) works in plain CSS — one source of truth. */
+  --transition-duration-instant: var(--duration-instant);
+  --transition-duration-quick: var(--duration-quick);
+  --transition-duration-base: var(--duration-base);
+  --transition-duration-slow: var(--duration-slow);
+  --transition-duration-draw: var(--duration-draw);
+
+  /* Easings. --ease-out and --ease-in override Tailwind's defaults deliberately:
+     entrances must arrive decisively, never ease-in-out. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* entrances — default */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* exits */
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1); /* hovers, small states */
+
+  /* Stagger between siblings in a grid or list. Caps at 6 — see --stagger-cap. */
+  --stagger: 60ms;
+
+  /* A bare `transition-*` utility with no duration/easing now lands on tokens
+     instead of Tailwind's 150ms / raw cubic-bezier. */
+  --default-transition-duration: var(--duration-base);
+  --default-transition-timing-function: var(--ease-soft);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-montserrat);
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+  }
+}
+
+/* ── Global reduced-motion guard (motion-layer.md §Accessibility) ────────────
+   The single off-switch for every effect in the motion layer. Paired with a JS
+   check in src/scripts/motion.ts so observers never run at all, rather than
+   running invisibly. Layout is unaffected — nothing here moves or hides. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Smooth in-page anchors; the guard above resets this under reduced motion.
+   scroll-padding clears the sticky nav so targets don't land underneath it. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+/* ── Scroll reveal (§0.3 baseline + motion-layer.md §Section entry) ───────────
+   The hidden state only applies when JS is present (html.js is set in
+   BaseLayout), so no-JS users always see fully-visible content instantly. Under
+   reduced motion the no-preference query never matches, so content is static.
+
+   [data-reveal]         — one element rises 16px and fades in.
+   [data-reveal="image"] — settles from 1.04 scale instead of rising.
+   [data-reveal-group]   — container; its children cascade by --stagger. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-reveal],
+  html.js [data-reveal-group] > * {
+    opacity: 0;
+    transition:
+      opacity var(--duration-slow) var(--ease-out),
+      transform var(--duration-slow) var(--ease-out);
+  }
+
+  /* One direction per page: content rises. It never slides in from the side. */
+  html.js [data-reveal],
+  html.js [data-reveal-group] > * {
+    transform: translateY(16px);
+  }
+
+  /* Not parallax — this completes on entry and stops.
+     Do NOT put this on a full-bleed image sitting on a dark band. Fading an image
+     up from opacity 0 over `ink` renders as a large black rectangle until the
+     observer fires, and on a fast scroll that is all you see — which is exactly
+     the "reveals must not gate content" rule in motion-layer.md. Contained images
+     (cards, thumbnails) are fine; full-bleed photo bands are the content. */
+  html.js [data-reveal="image"] {
+    transform: scale(1.04);
+  }
+
+  /* A child may carry its own [data-reveal] and still sit inside a group —
+     TeamMember does exactly this. motion.ts deliberately never observes those
+     individually (two effects on one element), so their own .is-revealed never
+     lands; this rule is what makes them visible, and it out-specifies the hidden
+     [data-reveal] rule above (0,3,1 vs 0,2,1). Keep the group selector at least
+     that specific or every team card stays invisible. */
+  html.js [data-reveal].is-revealed,
+  html.js [data-reveal-group].is-revealed > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Same rule for reveals: keyboard focus must never land on something invisible,
+     even in the frame or two before the observer catches up. */
+  html.js [data-reveal]:focus-within,
+  html.js [data-reveal-group]:focus-within > * {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0ms;
+  }
+
+  /* Stagger caps at 6. Items 7+ share item 6's delay and arrive together — a
+     25-card grid at 60ms each would take 1.5s, which reads as a loading bar.
+     Structural rather than computed, so no grid can opt out of the cap. */
+  html.js [data-reveal-group].is-revealed > :nth-child(2) {
+    transition-delay: var(--stagger);
+  }
+  html.js [data-reveal-group].is-revealed > :nth-child(3) {
+    transition-delay: calc(var(--stagger) * 2);
+  }
+  html.js [data-reveal-group].is-revealed > :nth-child(4) {
+    transition-delay: calc(var(--stagger) * 3);
+  }
+  html.js [data-reveal-group].is-revealed > :nth-child(5) {
+    transition-delay: calc(var(--stagger) * 4);
+  }
+  html.js [data-reveal-group].is-revealed > :nth-child(n + 6) {
+    transition-delay: calc(var(--stagger) * 5);
+  }
+}
+
+/* ── Link underline sweep (motion-layer.md §Link underline sweep) ────────────
+   scaleX on a pseudo-element, never an animated border-bottom width — width is a
+   layout property and would reflow the line box on every hover. Hover is gated
+   behind (hover: hover) so touch devices get no stuck underline; focus-visible is
+   not gated, so keyboard users always get the same affordance. */
+.link-sweep {
+  position: relative;
+}
+.link-sweep::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-quick) var(--ease-soft);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .link-sweep:hover::after {
+    transform: scaleX(1);
+  }
+}
+.link-sweep:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ── Scratch stroke-draw (motion-layer.md §Scratch stroke-draw) ──────────────
+   The claw asset is three closed filled outlines, so the draw strokes each
+   perimeter rather than a centreline — on shapes this thin the two read the same.
+   vector-effect keeps the stroke at a constant device width however the SVG is
+   scaled, and pathLength="1" (injected by SectionDivider) makes the dash math
+   resolution-independent.
+
+   This is the one effect that animates something other than transform/opacity.
+   motion-layer.md names stroke-dashoffset explicitly, and it is a paint on a
+   142×96 box — no layout, no compositing cost worth the name. */
+.claw-draw path {
+  fill: none;
+  stroke: currentColor;
+  /* User units, NOT px. The gashes sit inside the asset's own
+     `translate(0,608) scale(0.1,-0.1)` group, so path coordinates run 0–6080 and a
+     stroke of 50 here lands at roughly 2px on screen at the rendered size.
+
+     Deliberately no `vector-effect: non-scaling-stroke`: it resolves dash lengths in
+     device space, so the dash pattern collapses to about a pixel and the gash paints
+     solid however the dashoffset animates — the number moves, the picture does not. */
+  stroke-width: 50;
+  stroke-linecap: round;
+  /* --draw-len is each path's measured length, written by motion.ts. Unset means
+     dasharray 0, which is no dashing at all — a solid, fully drawn gash. That is the
+     no-JS and reduced-motion state, i.e. the static scratch divider the spec asks
+     for in place of an animated one. */
+  stroke-dasharray: var(--draw-len, 0);
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Trigger via the shared observer, but suppress the default rise and fade —
+     the draw is the effect, and stacking two on one element is forbidden.
+     Same specificity as the [data-reveal] rule above, so source order wins. */
+  html.js [data-reveal="draw"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Deliberately untransitioned. motion.ts writes --draw-len after first paint, so
+     this value jumps 0 → ~9450 on load; with a transition here that jump animates
+     and the gashes visibly erase themselves before they ever draw. */
+  html.js .claw-draw path {
+    stroke-dashoffset: var(--draw-len, 0);
+  }
+
+  /* The transition lives on the destination state, so only the draw animates and
+     the initial hide is instant.
+     --duration-draw is the one token above --duration-slow that is not the tear.
+     motion-layer.md contradicts itself here — the prose asks for ~600ms, the token
+     rules say nothing but the tear may exceed --duration-slow. At 480ms the draw was
+     over before it registered, so the prose wins and it gets its own named token. */
+  html.js .claw-draw.is-revealed path {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--duration-draw) var(--ease-out);
+  }
+
+  /* Stagger across the three gashes, left to right. These must sit on the revealed
+     rule too — the `transition` shorthand above resets transition-delay. */
+  html.js .claw-draw.is-revealed path:nth-child(2) {
+    transition-delay: var(--stagger);
+  }
+  html.js .claw-draw.is-revealed path:nth-child(3) {
+    transition-delay: calc(var(--stagger) * 2);
+  }
+}
+
+/* ── Card hover claw flick (motion-layer.md §Card hover — claw flick) ────────
+   Texture, not animation: sand at low opacity, gone in --duration-quick. Hidden
+   behind (hover: hover) so touch devices never get a stuck state, and
+   pointer-events: none so it can't intercept the card's own link. */
+.claw-flick {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.25rem;
+  width: 3rem;
+  height: 4.5rem;
+  color: var(--color-sand);
+  fill: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-0.5rem, 0.5rem, 0);
+  transition:
+    opacity var(--duration-quick) var(--ease-soft),
+    transform var(--duration-quick) var(--ease-soft);
+}
+
+@media (hover: hover) {
+  .group:hover .claw-flick,
+  .group:focus-within .claw-flick {
+    opacity: 0.3;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── Background rhythm transition (motion-layer.md §Background rhythm) ───────
+   The page runs cream → ink → cream → primary. This fades a wash of the outgoing
+   band over the top of the incoming one so the rhythm reads as one continuous
+   page rather than stacked blocks. Opacity on an overlay — never background-color,
+   which is neither compositor-safe nor animatable across a seam.
+   Rendered by BandBlend.astro; --band-from carries the outgoing color. */
+.band-blend {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 4rem;
+  pointer-events: none;
+  background-image: linear-gradient(to bottom, var(--band-from), transparent);
+  /* Invisible in every mode by default — reduced motion and no-JS included. The
+     shared [data-reveal] hidden state lives inside a no-preference query, so relying
+     on it left this painting at full strength for reduced-motion visitors. */
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Opacity only: the shared 16px rise would drag the wash down off the seam it
+     exists to hide. */
+  html.js [data-reveal="blend"] {
+    transform: none;
+  }
+  /* Caps well below 1. This is meant to read as the band above having a soft bottom
+     edge; at full strength it is a black bar, which is what "crossfade slightly"
+     is not. Declared after the shared .is-revealed rule, which it ties with on
+     specificity and beats on source order. */
+  html.js .band-blend.is-revealed {
+    opacity: 0.22;
+  }
+}
+
+/* ── Language toggle / page crossfade (motion-layer.md §Language toggle) ──────
+   ClientRouter's root transition is already an opacity-only cross-fade; this only
+   retimes it onto the tokens. Text length differs between EN and FR, so nothing
+   here may touch layout — animating a reflow between languages looks broken. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-quick);
+  animation-timing-function: var(--ease-soft);
+}
+
+/* The `*` guard above cannot reach view-transition pseudo-elements — they are not
+   part of the document tree — so reduced motion is switched off explicitly here. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ── Form validation messages (motion-layer.md §Form states) ─────────────────
+   The error slot already reserves its line height, so showing a message never
+   reflows the form; :empty means the fade needs no JS to drive it. */
+.field-error {
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease-soft);
+}
+.field-error:not(:empty) {
+  opacity: 1;
+}

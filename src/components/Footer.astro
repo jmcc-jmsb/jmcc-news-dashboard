@@ -1,0 +1,126 @@
+---
+// ABOUTME: Site footer — JMCC branding, contact, socials, CASA attribution, plus news-source credit.
+// ABOUTME: COPIED from jmcc-website. Re-copy by hand when the brand changes (HANDOFF); keep the delta small.
+//
+// Delta from the jmcc-website original:
+//   1. `lang` hard-coded 'en' (brief §1).
+//   2. A news-source attribution line added to the bottom bar (brief §6).
+// Links are otherwise untouched — ../i18n/utils.ts makes getLocalizedPath()
+// absolute, so /faq and /privacy resolve to the main site rather than 404ing here.
+import { Image } from 'astro:assets';
+import { getLocalizedPath, useTranslations } from '../i18n/utils';
+import SocialIcon from './SocialIcon.astro';
+import shieldGold from '../assets/brand/jmcc-shield-textured-gold.png';
+import casaLogo   from '../assets/brand/casa-logo-white.png';
+import contact from '../data/contact.json';
+
+const lang = 'en' as const;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+const copyright = t('footer.copyright').replace('{year}', year.toString());
+
+const { address } = contact;
+// Room renders as "1450 Guy Street, MB S1-455" — the room code carries its own
+// building prefix, so no Room/local label.
+const hasRoom = Boolean(address.room && !address.room.startsWith('TODO'));
+const line1 = hasRoom ? `${address.line1}, ${address.room}` : address.line1;
+const line2 = `${address.city}, ${address.province} ${address.postalCode}`;
+---
+
+<footer class="bg-primary text-cream pt-16 pb-8">
+  <div class="max-w-7xl mx-auto px-6">
+    <!-- 3-column grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-cream/10">
+
+      <!-- Brand -->
+      <div>
+        <div class="mb-5 w-24 h-24">
+          <Image
+            src={shieldGold}
+            alt="JMCC"
+            width={96}
+            height={96}
+            class="w-full h-full object-contain"
+          />
+        </div>
+        <p class="font-unbounded font-bold text-xl text-gold mb-1">{t('footer.tagline')}</p>
+        <p class="font-montserrat text-xs text-cream/50 leading-relaxed">{t('footer.tagline-sub')}</p>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <h2 class="font-unbounded text-xs text-sand uppercase tracking-widest mb-4">
+          {t('footer.contact')}
+        </h2>
+        <a
+          href={`mailto:${contact.email}`}
+          class="font-montserrat text-sm text-cream/70 hover:text-gold transition-colors"
+        >
+          {contact.email}
+        </a>
+        <address class="font-montserrat text-sm text-cream/70 not-italic mt-3 leading-relaxed">
+          {line1}<br />
+          {line2}
+        </address>
+        <!-- FAQ lives in the footer, not the main nav. -->
+        <a
+          href={getLocalizedPath('/faq', lang)}
+          class="block font-montserrat text-sm text-cream/70 hover:text-gold transition-colors mt-3"
+        >
+          {t('footer.faq')}
+        </a>
+        <a
+          href={getLocalizedPath('/privacy', lang)}
+          class="block font-montserrat text-sm text-cream/70 hover:text-gold transition-colors mt-3"
+        >
+          {t('footer.privacy')}
+        </a>
+      </div>
+
+      <!-- Social -->
+      <div>
+        <h2 class="font-unbounded text-xs text-sand uppercase tracking-widest mb-4">
+          {t('footer.social')}
+        </h2>
+        <div class="flex flex-col gap-3">
+          {contact.socials.map((s) => (
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-3 font-montserrat text-sm text-cream/70 hover:text-gold transition-colors min-h-10"
+              aria-label={`${s.platform} — ${s.handle} (${t('a11y.external-link')})`}
+            >
+              <SocialIcon platform={s.platform} class="w-6 h-6" />
+              {s.handle}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- News-source attribution (brief §6). Headlines and links only are stored;
+         full article text is never copied (brief §10, Copyright), so this credits
+         the publishers and states plainly that the reader is being sent to them. -->
+    <p class="font-montserrat text-xs text-cream/50 leading-relaxed pt-6 max-w-3xl">
+      Headlines and summaries are aggregated from NewsData.io, Marketaux, and the
+      public RSS feeds of McKinsey, BCG, Strategy+Business, Deloitte Insights, and
+      PwC. All rights remain with the original publishers. Every item links to the
+      source — JMCC does not host or reproduce full articles.
+    </p>
+
+    <!-- Bottom bar -->
+    <div class="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <p class="font-montserrat text-xs text-cream/35">{copyright}</p>
+      <div class="flex items-center gap-2">
+        <span class="font-montserrat text-xs text-cream/35">{t('footer.governed-by')}</span>
+        <Image
+          src={casaLogo}
+          alt="CASA JMSB"
+          height={24}
+          class="h-6 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+        />
+      </div>
+    </div>
+  </div>
+</footer>

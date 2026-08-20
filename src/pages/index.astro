@@ -1,0 +1,27 @@
+---
+// ABOUTME: The dashboard page — the React island plus the shared Footer. No site nav.
+// ABOUTME: Prerendered: the island is client:only, so there is nothing per-request to render.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Footer from '../components/Footer.astro';
+import Dashboard from '../components/news/Dashboard';
+
+// astro.config.mjs sets output: 'server' for the ingest and digest cron routes.
+// This page has no per-request work — the island renders entirely in the
+// browser — so it is served as static HTML instead of being rendered per hit.
+export const prerender = true;
+---
+
+<BaseLayout
+  title="JMCC News & Resources Dashboard"
+  description="Discipline news, consulting insights, and case-prep reference material for John Molson Competition Committee delegates."
+>
+  {/*
+    client:only="react" rather than client:load. Three things in this island
+    would break under SSR (brief §12): useState initialisers that read
+    localStorage, readQuery() reading window.location during render, and the
+    theme flash. client:only removes the server render that causes all three,
+    so none of them need defensive guards in the components themselves.
+  */}
+  <Dashboard client:only="react" />
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,54 @@
+---
+// ABOUTME: Page shell — head metadata, brand + dashboard stylesheets, pre-paint theme script.
+// ABOUTME: The theme script must stay inline and blocking; deferring it reintroduces the light-mode flash.
+import '../styles/global.css';
+import '../styles/dashboard.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://news.jmccjmsb.ca');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+
+    {/*
+      Runs before first paint, so data-theme is on <html> by the time any
+      pixel is drawn. The prototype applied the theme in a useEffect, which
+      meant dark-mode users saw a full light-mode frame first (brief §12,
+      hazard 3). It duplicates the localStorage key on purpose: importing
+      lib/storage.ts here would mean shipping a module graph before paint,
+      which is exactly the delay this avoids.
+
+      The key is frozen — see AGENTS.md "Do not change".
+    */}
+    <script is:inline>
+      try {
+        var t = JSON.parse(localStorage.getItem('jmcc_theme'));
+        document.documentElement.dataset.theme = t === 'dark' ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

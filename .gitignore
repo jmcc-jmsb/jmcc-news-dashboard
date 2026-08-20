@@ -1,0 +1,35 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# vercel adapter output
+.vercel/
+
+# playwright-mcp scratch output
+.playwright-mcp/
+
+# added by `vercel link` — .env.local holds a VERCEL_OIDC_TOKEN.
+# The negation matters: .env.example is documentation and MUST be committed.
+.env*
+!.env.example

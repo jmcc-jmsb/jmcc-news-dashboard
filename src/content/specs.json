@@ -1,0 +1,68 @@
+{
+  "finance": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "accounting": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "tax": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "marketing": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "strategy": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "digital-strategy": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "entrepreneurship": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "hr": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "pom": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "sustainability": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "international": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  }
+}

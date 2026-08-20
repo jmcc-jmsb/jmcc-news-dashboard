@@ -1,0 +1,36 @@
+{
+  "site.name": "JMCC",
+  "site.tagline": "John Molson Competition Committee",
+  "site.description": "Concordia University's premier business competition organization",
+
+  "nav.who-we-are": "Who We Are",
+  "nav.our-team": "Our Team",
+  "nav.sponsors": "Sponsors",
+  "nav.competitions": "Competitions",
+  "nav.all-competitions": "All Competitions",
+  "nav.disciplines": "Disciplines",
+  "nav.trophy-cabinet": "Trophy Cabinet",
+  "nav.get-involved": "Get Involved",
+  "nav.portal": "Portal",
+  "nav.contact": "Contact",
+  "nav.contact-us": "Contact Us",
+  "nav.report": "Report an Incident",
+  "nav.donate": "Donate",
+  "nav.blog": "Blog",
+  "nav.menu": "Open menu",
+  "nav.close": "Close menu",
+  "nav.lang-toggle": "Français",
+
+  "footer.tagline": "Join the Wolfpack",
+  "footer.tagline-sub": "Concordia University · John Molson School of Business",
+  "footer.contact": "Contact",
+  "footer.social": "Follow Us",
+  "footer.governed-by": "Governed by",
+  "footer.faq": "FAQ",
+  "footer.privacy": "Privacy Policy",
+  "footer.copyright": "© {year} John Molson Competition Committee. All rights reserved.",
+
+  "card.read-more": "Read more",
+
+  "a11y.external-link": "Opens in new tab"
+}

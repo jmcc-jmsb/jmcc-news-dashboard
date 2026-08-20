@@ -1,0 +1,33 @@
+# ABOUTME: CI — typecheck, unit tests, and a production build on every push and PR.
+# ABOUTME: Also greps for secrets reaching client code, which env.schema already blocks at build time.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # Second line of defence behind astro.config.mjs's env.schema. If a secret
+      # is ever read outside src/pages/api/, this fails before review does.
+      - name: No server secrets in client code
+        run: |
+          if grep -rnE 'SUPABASE_SECRET_KEY|NEWSDATA_API_KEY|MARKETAUX_API_KEY|RESEND_API_KEY|CRON_SECRET' \
+               src --include='*.tsx' --include='*.astro' \
+               | grep -v '^src/pages/api/'; then
+            echo "::error::A server secret is referenced from client-reachable code."
+            exit 1
+          fi
