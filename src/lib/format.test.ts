@@ -1,9 +1,9 @@
 // ABOUTME: Pins h() — the ingest dedupe key — plus the specs status gating.
 // ABOUTME: Run with `npm test`. If h() changes, every stored article id changes and ingest re-inserts the feed.
 
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { h, absDate, relTime } from './format.ts';
+import { h, absDate, relTime } from './format';
 
 /* These expectations were produced by the prototype's implementation, not by
    this one. That is the point: they fail if the port drifted. The fixture URLs

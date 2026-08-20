@@ -11,7 +11,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"src/lib/**/*.test.ts\"",
+    "test": "vitest run",
     "astro": "astro"
   },
   "dependencies": {
@@ -36,5 +36,8 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
   }
 }

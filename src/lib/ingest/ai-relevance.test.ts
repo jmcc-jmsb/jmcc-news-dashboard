@@ -1,9 +1,9 @@
 // ABOUTME: Pins the AI-relevance matcher, above all its refusal to fire on a bare "AI" token.
 // ABOUTME: Run with `npm test`. These flags become a database column at ingest, so wrong is expensive.
 
-import { test } from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { isAiRelevant, aiMatch, AI_PHRASES } from './ai-relevance.ts';
+import { isAiRelevant, aiMatch, AI_PHRASES } from './ai-relevance';
 
 test('matches the phrase forms that actually appear in headlines', () => {
   const yes: [string, string][] = [
