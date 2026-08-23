@@ -27,7 +27,7 @@ npm run dev
 
 Node >= 22.12 required.
 
-## Current state — Sprints 0, 0.5 and 1 complete
+## Current state — Sprints 0 through 4 complete
 
 The re-skinned prototype is ported to typed React and renders on fixture data.
 
@@ -40,11 +40,13 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
 - ✅ AI relevance: phrase matcher, badge, and "AI Angle" feed filter (fixture-driven)
 - ✅ Lighthouse on the production build: **performance 94, accessibility 100,
   best practices 100, SEO 100** (Sprint 1 gate is ≥ 90 / ≥ 95)
-- ⬜ Supabase, ingest, cron — Sprint 2
+- ✅ Supabase schema, RLS, ingest pipeline — Sprint 2
 - ✅ Read APIs (`/api/news`, `/api/reports`, `/api/sponsors`), Sponsor Watch,
   live AI filter, honest empty/unavailable states — Sprint 3
+- ✅ Weekly digest — Sprint 4: `/api/digest/subscribe`, `/api/digest/unsubscribe`,
+  `/api/cron/digest`, and the `crons` block in `vercel.json`
 - ⬜ Applying migrations and a real ingest run — blocked on credentials
-- ⬜ Resend weekly digest — Sprint 4
+- ⬜ A real digest send — blocked on `RESEND_API_KEY` and a verified sender domain
 
 The UI now reads from the API rather than importing fixtures. With no database
 configured the feed renders an honest "not connected yet" state; set
@@ -74,7 +76,19 @@ acronyms. The UI badges matches and offers a filter; it does not reorder the
 feed, so recency stays the primary sort.
 
 **Copyright.** Title, description, and URL only. Never full article bodies —
-that is republication. Always link out.
+that is republication. Always link out. The digest email is held to the same
+rule, and a test pins it.
+
+**The digest never sends an empty email.** A subscriber whose every chosen
+discipline had no news that week is counted as `skippedEmpty` and skipped. An
+email that says "nothing this week" eleven times over is how a newsletter
+teaches people to ignore the next one.
+
+**Unsubscribe resolves by uuid token, never by email.** An email-keyed
+unsubscribe URL lets anyone unsubscribe anyone by guessing an address. The link
+works on GET (a person clicking it) and on POST (a mail client's own
+unsubscribe button, RFC 8058 one-click), and never asks for a confirmation
+click.
 
 ## Brand files are copied, not shared
 

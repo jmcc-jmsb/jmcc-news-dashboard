@@ -683,6 +683,28 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .primary-btn:hover { filter: brightness(1.06); }
 .primary-btn.small { padding: 8px 14px; }
+/* Disabled is dimmed rather than recoloured — a second button colour would be
+   a token this palette does not have. cursor + opacity carry the state, and
+   the attribute itself carries it for assistive tech. */
+.primary-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.primary-btn:disabled:hover { filter: none; }
+
+/* Subscribe errors. The palette has no red — --line-strong is a maroon that
+   would vanish on the maroon panel — so the alert reads through weight and a
+   gold rule instead of hue. gold on --accent (light) and on --accent-soft
+   (dark) are both well past AA, and both are dark backgrounds, so this obeys
+   the gold-is-dark-background-only rule. */
+.subscribe-error {
+  margin: 0;
+  padding: 8px 0 8px 10px;
+  border-left: 2px solid var(--cta);
+  color: var(--cta);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  line-height: 1.45;
+}
 
 .fine-print { color: rgb(var(--on-accent-rgb) / 0.6); }
 :root[data-theme="dark"] .subscribe .fine-print { color: var(--ink-mute); }

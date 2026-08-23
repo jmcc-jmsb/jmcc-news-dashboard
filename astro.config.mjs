@@ -55,6 +55,11 @@ export default defineConfig({
       NEWSDATA_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       MARKETAUX_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       RESEND_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+
+      /* Not a secret — it is printed in the From: line of every digest — but
+         server-context so it cannot be read from a component. Must be an
+         address on a domain verified in Resend, or the send is rejected. */
+      DIGEST_FROM: envField.string({ context: 'server', access: 'public', optional: true }),
       CRON_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },

@@ -1,5 +1,5 @@
 // ABOUTME: Weekly digest signup — email plus a per-discipline opt-in list.
-// ABOUTME: Sprint 0 is UI only; POST to /api/digest/subscribe lands in Sprint 4.
+// ABOUTME: Posts to /api/digest/subscribe — the browser cannot write that table itself, it has no read policy.
 
 import { useState } from 'react';
 import { DISCIPLINES } from '../../lib/disciplines';
@@ -14,6 +14,8 @@ export function SubscribePanel() {
   );
   const [submitted, setSubmitted] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggle = (id: DisciplineId) => {
     setSelected((s) => {
@@ -63,13 +65,38 @@ export function SubscribePanel() {
           only reason this file needed it. */}
       <form
         className="subscribe-form"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (!email || !email.includes('@')) return;
-          // Sprint 4 replaces this with a POST to /api/digest/subscribe, which
-          // writes to news_digest_subscribers with the secret key. That table
-          // has no public read policy whatsoever (brief §10).
-          setSubmitted(true);
+          if (pending) return;
+          setError(null);
+          setPending(true);
+
+          /* The route re-validates all of this. The checks below are for the
+             reader's benefit only — never treat a client-side guard as the
+             one that matters, the endpoint is public. */
+          try {
+            const res = await fetch('/api/digest/subscribe', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ email, disciplines: Array.from(selected) }),
+            });
+
+            if (!res.ok) {
+              // The route's message is written for a delegate and never names
+              // an environment variable, so it can be shown as-is.
+              const body = await res.json().catch(() => null);
+              setError(body?.message ?? 'We could not save that subscription. Please try again.');
+              return;
+            }
+
+            setSubmitted(true);
+          } catch {
+            // Offline, or the request never left. Distinct from a 4xx/5xx:
+            // nothing was written, so retrying is the right advice.
+            setError('That did not go through. Check your connection and try again.');
+          } finally {
+            setPending(false);
+          }
         }}
       >
         <label className="field">
@@ -121,8 +148,16 @@ export function SubscribePanel() {
           )}
         </div>
 
-        <button type="submit" className="primary-btn">
-          Subscribe
+        {/* aria-live so a screen reader hears the failure — the message
+            appears without the focus ever moving. */}
+        {error && (
+          <p className="subscribe-error meta" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" className="primary-btn" disabled={pending || selected.size === 0}>
+          {pending ? 'Subscribing…' : 'Subscribe'}
         </button>
         <p className="fine-print meta">No account required · unsubscribe anytime</p>
       </form>

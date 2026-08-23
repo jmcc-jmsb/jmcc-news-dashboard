@@ -148,3 +148,33 @@ export async function getActiveSponsors(): Promise<SponsorRow[]> {
     competitionId: (s.competition_id as string | null) ?? null,
   }));
 }
+
+/**
+ * The week's items for one discipline, for the Monday digest.
+ *
+ * Separate from getFeed because the digest asks a different question: getFeed
+ * wants "the latest N whatever their age", which on a quiet discipline happily
+ * returns a month-old headline. A digest that mails last month's news as this
+ * week's is worse than a digest that skips the discipline, so this one is
+ * bounded by `since` and is allowed to come back empty.
+ *
+ * Pinned items are deliberately NOT hoisted here. A pin is an editorial choice
+ * about the dashboard; the digest is a chronological week in review.
+ */
+export async function getDigestItems(
+  table: 'news_articles' | 'news_reports',
+  discipline: string,
+  since: Date,
+  limit: number,
+): Promise<FeedItem[]> {
+  const { data, error } = await supabaseAdmin()
+    .from(table)
+    .select('*')
+    .eq('discipline', discipline)
+    .gte('published_at', since.toISOString())
+    .order('published_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`${table} digest read failed: ${error.message}`);
+  return (data ?? []).map((r) => toFeedItem(r as Row));
+}
