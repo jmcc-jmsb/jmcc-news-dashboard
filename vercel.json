@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "astro"
+  "framework": "astro",
+
+  "crons": [
+    { "path": "/api/cron/ingest", "schedule": "0 11 * * *" },
+    { "path": "/api/cron/digest", "schedule": "0 13 * * 1" }
+  ]
 }

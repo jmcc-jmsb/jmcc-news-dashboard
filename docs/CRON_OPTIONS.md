@@ -3,7 +3,7 @@
 > **Owner decision, 2026-08-20: run ingest once a day and stay on the Vercel
 > Hobby plan.** No upgrade, no external scheduler. Option 2 below.
 >
-> Sprint 2 adds this block to `vercel.json` when the routes exist:
+> **Shipped in Sprint 4.** This block is now in `vercel.json`:
 >
 > ```json
 > "crons": [
