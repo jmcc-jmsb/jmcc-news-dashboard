@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -fsS -X POST "https://news.jmccjmsb.ca/api/cron/ingest" \
+          curl -fsS -X POST "https://news.wecompete.ca/api/cron/ingest" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 ```
 

@@ -52,6 +52,26 @@ The UI now reads from the API rather than importing fixtures. With no database
 configured the feed renders an honest "not connected yet" state; set
 `PUBLIC_USE_FIXTURES=true` to demo on sample data, which is labelled on screen.
 
+## Domain — `news.wecompete.ca`
+
+Set once in `astro.config.mjs → site`; every absolute URL derives from it. Never
+hardcode a hostname in a component or page.
+
+Decided 2026-08-23, superseding brief §14's `news.jmccjmsb.ca`. `jmccjmsb.ca` is
+legacy-redirect-only — `jmcc-website` 301s it to `wecompete.ca` preserving the
+path — so the brief's host would have made every canonical URL here a permanent
+redirect target, including the unsubscribe link that sits in people's inboxes.
+
+**The dashboard is public and anonymous.** It is its own Vercel deployment,
+shares no session with `jmcc-portal`, and requires no sign-in. The subdomain is
+where it lives, not a door into the Portal.
+
+> **Blocked on CASA IT.** `news` needs a CNAME to the project-specific target
+> Vercel shows under Settings → Domains — not the generic one. DNS for
+> `wecompete.ca` is owned by CASA IT (Ryan), same as the main site; see
+> `MAINTENANCE.md` in `jmcc-website`. Nothing resolves until that record exists,
+> and `PUBLIC_SITE_URL` must match it before the first digest goes out.
+
 ## Architecture notes
 
 **Shared Supabase project with `jmcc-portal`.** The Portal was there first and

@@ -17,7 +17,7 @@ beforeEach(async () => {
 });
 
 const req = (auth?: string) =>
-  new Request('https://news.jmccjmsb.ca/api/cron/ingest', {
+  new Request('https://news.wecompete.ca/api/cron/ingest', {
     headers: auth === undefined ? {} : { authorization: auth },
   });
 
