@@ -132,16 +132,20 @@ export default function Dashboard() {
         showSpecsTab={HAS_ANY_PUBLISHED_SPECS}
         showSponsorsTab={HAS_ANY_PUBLISHED_SPONSORS}
       />
-      <DisciplineBar
-        discipline={discipline}
-        setDiscipline={(d) => {
-          setDiscipline(d);
-          // Both of these are whole-dashboard views rather than per-discipline
-          // ones, so picking a discipline means the reader wants the feed.
-          if (tab === 'saved' || tab === 'sponsors') setTab('news');
-        }}
-        disabled={tab === 'saved' || tab === 'sponsors'}
-      />
+      {/* Absent on Sponsors, not greyed out: sponsor profiles are not scoped
+          to a discipline at all, so a disabled filter there is a control that
+          could never have applied. Saved keeps the disabled bar — its contents
+          ARE per-discipline, so the filter is meaningful, just not live. */}
+      {tab !== 'sponsors' && (
+        <DisciplineBar
+          discipline={discipline}
+          setDiscipline={(d) => {
+            setDiscipline(d);
+            if (tab === 'saved') setTab('news');
+          }}
+          disabled={tab === 'saved'}
+        />
+      )}
       <main className="main">
         {tab === 'news' && (
           <NewsView
