@@ -55,8 +55,8 @@
      These deliberately do NOT flip with the theme. Gold is gold in both, and
      black on gold is the only AA-passing pairing (12.19:1) — using --ink here
      would invert to cream in dark mode and fail at 1.56:1. --on-accent is cream
-     over the maroon subscribe panel; the dark-mode rules override that panel
-     wholesale rather than recolouring it. */
+     over an accent-filled panel; the subscribe panel was its only user, so it
+     now survives only in the shared .field controls. */
   --cta-ink:       #000000;
   --on-accent:     #f7f3ec;
   --on-accent-rgb: 247 243 236;
@@ -217,7 +217,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: var(--accent);
 }
 /* Circular by exception — the site's own nav logo uses rounded-full, and a
-   count bubble reads as a bubble. §3g keeps .badge and .check-circle round. */
+   count bubble reads as a bubble. §3g keeps .badge round (.check-circle, the
+   other exception, went with the subscribe panel). */
 .badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px;
@@ -578,22 +579,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   text-decoration: none;
 }
 
-/* ----------- SUBSCRIBE ----------- */
-.subscribe { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.subscribe .rail-head { border-bottom-color: rgb(var(--on-accent-rgb) / 0.2); }
-.subscribe .rail-title { color: var(--on-accent); }
-.subscribe .kicker { color: var(--cta); }
-.subscribe .rail-sub { color: rgb(var(--on-accent-rgb) / 0.75); }
-:root[data-theme="dark"] .subscribe { background: var(--accent-soft); color: var(--ink); border-color: var(--line-strong); }
-:root[data-theme="dark"] .subscribe .rail-title { color: var(--ink); }
-:root[data-theme="dark"] .subscribe .rail-head { border-bottom-color: var(--line); }
-:root[data-theme="dark"] .subscribe .rail-sub { color: var(--ink-soft); }
-:root[data-theme="dark"] .subscribe .kicker { color: var(--cta); }
-
-.subscribe-form { display: flex; flex-direction: column; gap: 14px; }
+/* ----------- FORM CONTROLS ----------- */
+/* Shared by the Case History editor. These were tuned for the maroon subscribe
+   panel that used to sit in the rail; .hist-editor re-colours the label. */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-label { color: rgb(var(--on-accent-rgb) / 0.7); }
-:root[data-theme="dark"] .subscribe .field-label { color: var(--ink-soft); }
 
 .field input[type=email], .field input[type=text], .field textarea {
   font: inherit;
@@ -606,60 +596,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   outline: none;
   transition: border-color .12s;
 }
-:root[data-theme="dark"] .subscribe .field input,
-:root[data-theme="dark"] .subscribe .field textarea {
-  background: var(--bg-sunken);
-  color: var(--ink);
-  border-color: var(--line);
-}
 .field input::placeholder { color: rgb(var(--on-accent-rgb) / 0.5); }
-:root[data-theme="dark"] .subscribe .field input::placeholder { color: var(--ink-mute); }
 .field input:focus, .field textarea:focus { border-color: var(--cta); }
-
-.disclosure {
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%;
-  padding: 0;
-  cursor: pointer;
-}
-.disclosure .meta { color: var(--cta); }
-
-.discipline-summary {
-  font-size: 11px;
-  color: rgb(var(--on-accent-rgb) / 0.75);
-  padding: 6px 0 0;
-}
-:root[data-theme="dark"] .subscribe .discipline-summary { color: var(--ink-soft); }
-
-.discipline-checks {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;
-  margin-top: 6px;
-  padding: 12px;
-  background: rgb(var(--shadow-rgb) / 0.25);
-  border: 1px solid rgb(var(--on-accent-rgb) / 0.25);
-  max-height: 240px;
-  overflow-y: auto;
-}
-:root[data-theme="dark"] .subscribe .discipline-checks {
-  background: var(--bg-sunken);
-  border-color: var(--line);
-}
-.check {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  color: rgb(var(--on-accent-rgb) / 0.9);
-}
-:root[data-theme="dark"] .subscribe .check { color: var(--ink); }
-.check input { position: absolute; opacity: 0; pointer-events: none; }
-.check .box {
-  width: 14px; height: 14px;
-  border: 1px solid rgb(var(--on-accent-rgb) / 0.5);
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--cta-ink);
-  flex-shrink: 0;
-}
-.check.checked .box { background: var(--cta); border-color: var(--cta); color: var(--cta-ink); }
 
 .primary-btn {
   padding: 12px 16px;
@@ -680,39 +618,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .primary-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .primary-btn:disabled:hover { filter: none; }
 
-/* Subscribe errors. The palette has no red — --line-strong is a maroon that
-   would vanish on the maroon panel — so the alert reads through weight and a
-   gold rule instead of hue. gold on --accent (light) and on --accent-soft
-   (dark) are both well past AA, and both are dark backgrounds, so this obeys
-   the gold-is-dark-background-only rule. */
-.subscribe-error {
-  margin: 0;
-  padding: 8px 0 8px 10px;
-  border-left: 2px solid var(--cta);
-  color: var(--cta);
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  line-height: 1.45;
-}
-
-.fine-print { color: rgb(var(--on-accent-rgb) / 0.6); }
-:root[data-theme="dark"] .subscribe .fine-print { color: var(--ink-mute); }
-
-.subscribe-success { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 4px 0 0; }
-.subscribe-success p { color: rgb(var(--on-accent-rgb) / 0.95); margin: 0; }
-:root[data-theme="dark"] .subscribe-success p { color: var(--ink); }
-.subscribe-success strong { color: var(--cta); }
-.subscribe-success em { color: var(--cta); font-style: normal; font-family: var(--font-sans); font-size: 12px; }
-.check-circle {
-  width: 36px; height: 36px;
-  border-radius: 999px;
-  background: var(--cta);
-  color: var(--cta-ink);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-
 .text-btn {
   font-family: var(--font-sans); font-size: 11px;
   text-transform: uppercase; letter-spacing: 0.08em;
@@ -723,7 +628,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .text-btn:hover { text-decoration: underline; }
 .text-btn:disabled { color: var(--ink-mute); cursor: default; }
 .text-btn:disabled:hover { text-decoration: none; }
-.subscribe .text-btn { color: var(--cta); }
 
 /* ----------- SPECS ----------- */
 .specs-layout {

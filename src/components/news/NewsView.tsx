@@ -12,7 +12,6 @@ import { SampleDataBanner } from './ui/SampleDataBanner';
 import { Icon } from './ui/Icon';
 import { ReportsPanel } from './ReportsPanel';
 import { SponsorWatch } from './SponsorWatch';
-import { SubscribePanel } from './SubscribePanel';
 
 const PAGE_SIZE = 12;
 
@@ -182,7 +181,6 @@ export function NewsView({
           isBookmarked={isBookmarked}
           toggleBookmark={toggleBookmark}
         />
-        <SubscribePanel />
       </aside>
     </div>
   );

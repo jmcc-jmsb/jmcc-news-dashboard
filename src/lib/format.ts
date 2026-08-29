@@ -29,44 +29,6 @@ export function relTime(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
-/* ── Digest send time ────────────────────────────────────────────────────────
-   Vercel cron only speaks UTC, so the digest fires at a fixed 13:00 UTC every
-   Monday. What that is in Montreal is not fixed: Eastern is UTC-4 on daylight
-   time and UTC-5 the rest of the year, so the same cron lands at 09:00 in
-   summer and 08:00 in winter.
-
-   The subscribe panel promises subscribers a specific time, so hardcoding one
-   makes it wrong for half the year. These derive it instead — the UI tracks the
-   cron automatically, in either direction, forever.
-
-   Note the fix that ISN'T available: the usual way to pin a local hour is to
-   schedule the job hourly and no-op until the local time matches. This Vercel
-   account is on the Hobby plan, which permits one cron run per day, so that
-   trick is off the table here. See docs/CRON_OPTIONS.md. */
-const DIGEST_UTC_HOUR = 13; // from "0 13 * * 1"
-
-/** The next instant the digest cron fires, as a real UTC Date. */
-export function nextDigestSend(now: Date = new Date()): Date {
-  const d = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DIGEST_UTC_HOUR, 0, 0),
-  );
-  d.setUTCDate(d.getUTCDate() + ((1 - d.getUTCDay() + 7) % 7)); // 1 = Monday
-  if (d.getTime() <= now.getTime()) d.setUTCDate(d.getUTCDate() + 7);
-  return d;
-}
-
-/** e.g. "Monday, 8:00 a.m. EST" — or "9:00 a.m. EDT" once clocks move.
- *  Asking Intl for the zone name means we never encode the offset ourselves. */
-export function digestSendLabel(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Toronto',
-    weekday: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  }).format(nextDigestSend(now));
-}
-
 /** "2026 May 22". en-CA throughout — the dashboard is English-only (brief §1). */
 export function absDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', {

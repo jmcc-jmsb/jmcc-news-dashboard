@@ -36,17 +36,16 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
 - ✅ Prototype ported to TypeScript, mounted `client:only="react"`
 - ✅ Specs content moved to `src/content/specs.json`, zod-validated, status-gated
 - ✅ Monospace face fully removed; `tabular-nums` for digit alignment
-- ✅ Zero raw hex outside the token blocks; zero rounded corners except `.badge` / `.check-circle`
+- ✅ Zero raw hex outside the token blocks; zero rounded corners except `.badge`
 - ✅ AI relevance: phrase matcher, badge, and "AI Angle" feed filter (fixture-driven)
 - ✅ Lighthouse on the production build: **performance 94, accessibility 100,
   best practices 100, SEO 100** (Sprint 1 gate is ≥ 90 / ≥ 95)
 - ✅ Supabase schema, RLS, ingest pipeline — Sprint 2
 - ✅ Read APIs (`/api/news`, `/api/reports`, `/api/sponsors`), Sponsor Watch,
   live AI filter, honest empty/unavailable states — Sprint 3
-- ✅ Weekly digest — Sprint 4: `/api/digest/subscribe`, `/api/digest/unsubscribe`,
-  `/api/cron/digest`, and the `crons` block in `vercel.json`
+- ❌ Weekly email digest — built in Sprint 4, then **cut before merge**. See
+  "Why there is no newsletter" below.
 - ⬜ Applying migrations and a real ingest run — blocked on credentials
-- ⬜ A real digest send — blocked on `RESEND_API_KEY` and a verified sender domain
 
 The UI now reads from the API rather than importing fixtures. With no database
 configured the feed renders an honest "not connected yet" state; set
@@ -60,7 +59,7 @@ hardcode a hostname in a component or page.
 Decided 2026-08-23, superseding brief §14's `news.jmccjmsb.ca`. `jmccjmsb.ca` is
 legacy-redirect-only — `jmcc-website` 301s it to `wecompete.ca` preserving the
 path — so the brief's host would have made every canonical URL here a permanent
-redirect target, including the unsubscribe link that sits in people's inboxes.
+redirect target.
 
 **The dashboard is public and anonymous.** It is its own Vercel deployment,
 shares no session with `jmcc-portal`, and requires no sign-in. The subdomain is
@@ -69,8 +68,7 @@ where it lives, not a door into the Portal.
 > **Blocked on CASA IT.** `news` needs a CNAME to the project-specific target
 > Vercel shows under Settings → Domains — not the generic one. DNS for
 > `wecompete.ca` is owned by CASA IT (Ryan), same as the main site; see
-> `MAINTENANCE.md` in `jmcc-website`. Nothing resolves until that record exists,
-> and `PUBLIC_SITE_URL` must match it before the first digest goes out.
+> `MAINTENANCE.md` in `jmcc-website`. Nothing resolves until that record exists.
 
 ## Architecture notes
 
@@ -96,19 +94,32 @@ acronyms. The UI badges matches and offers a filter; it does not reorder the
 feed, so recency stays the primary sort.
 
 **Copyright.** Title, description, and URL only. Never full article bodies —
-that is republication. Always link out. The digest email is held to the same
-rule, and a test pins it.
+that is republication. Always link out.
 
-**The digest never sends an empty email.** A subscriber whose every chosen
-discipline had no news that week is counted as `skippedEmpty` and skipped. An
-email that says "nothing this week" eleven times over is how a newsletter
-teaches people to ignore the next one.
+## Why there is no newsletter
 
-**Unsubscribe resolves by uuid token, never by email.** An email-keyed
-unsubscribe URL lets anyone unsubscribe anyone by guessing an address. The link
-works on GET (a person clicking it) and on POST (a mail client's own
-unsubscribe button, RFC 8058 one-click), and never asks for a confirmation
-click.
+Sprint 4 built a full weekly email digest — subscribe and unsubscribe routes, a
+Monday cron, Resend delivery, RFC 8058 one-click unsubscribe. It was removed
+before it ever merged, on the owner's call, and the removal is deliberate rather
+than a rollback of something broken.
+
+The reasoning is product, not engineering: pushing headlines into a delegate's
+inbox removes the small amount of work that makes the habit stick. Delegates are
+meant to come to the dashboard. The push channel returns later as a weekly
+AI-generated podcast summarising the week's findings, which is a different
+enough artifact to be worth the pull it costs.
+
+Removed with it: `src/lib/digest/`, `src/pages/api/digest/`,
+`src/pages/api/cron/digest.ts`, the `resend` dependency, `RESEND_API_KEY`,
+`DIGEST_FROM`, `PUBLIC_SITE_URL`, the Monday cron in `vercel.json`,
+`digestSendLabel()` in `lib/format.ts`, `getDigestItems()` in `lib/feed-repo.ts`,
+and the `news_digest_subscribers` table (migration
+`20260829000005`). Nothing was ever deployed, so there were no subscribers and
+no CASL obligation to honour.
+
+**Do not reinstate it as a shortcut to the podcast.** The podcast is a different
+product with a different pipeline; it does not need a subscriber table to
+exist.
 
 ## Brand files are copied, not shared
 

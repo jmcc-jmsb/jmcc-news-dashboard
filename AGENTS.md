@@ -70,18 +70,26 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 - Adding a second daily run does not degrade gracefully — Vercel **rejects the
   deploy outright**. Do not "fix" a stale feed by adding runs.
 - Budget the credit spend against one run, not four (brief §10 assumed four).
-- The weekly digest, `0 13 * * 1`, is unaffected — weekly is within the limit.
-- Reasoning and the alternatives are in docs/CRON_OPTIONS.md.
+- Ingest is now the ONLY cron. Reasoning and the alternatives are in
+  docs/CRON_OPTIONS.md.
 
 ## Daylight time
-- Vercel cron is UTC-only. `0 11 * * *` = 07:00 EDT / 06:00 EST; the weekly
-  digest `0 13 * * 1` = 09:00 EDT / 08:00 EST. Brief §11 states this drift
-  backwards — the schedule hits 8:00 AM in winter, which is launch season.
-- **Never hardcode a local send time in UI or email copy.** Call
-  `digestSendLabel()` from lib/format.ts; it derives the local time from the
-  cron via Intl, so it stays true across both offsets. Tests pin both.
+- Vercel cron is UTC-only, so a fixed UTC schedule drifts an hour locally:
+  `0 11 * * *` = 07:00 EDT / 06:00 EST. Ingest is not user-visible, so the
+  drift is harmless — but never write a local clock time into UI copy on the
+  assumption a cron fires at it.
 - The usual "schedule hourly and no-op" DST fix needs many runs per day and is
   therefore impossible on Hobby. Don't reach for it without a plan change.
+
+## No newsletter — deliberately
+- The weekly email digest was built in Sprint 4 and REMOVED before merge, on the
+  owner's call. Delegates are meant to come to the dashboard rather than have
+  headlines pushed at them; the push channel returns later as a weekly
+  AI-generated podcast, which is a different pipeline entirely.
+- Do not re-add a subscribe form, a subscriber table, an email dependency, or a
+  second cron in service of "bringing back the digest". If the podcast needs
+  distribution, that is its own design conversation.
+- README "Why there is no newsletter" lists everything that was removed.
 
 ## Ingest sources
 - **The RSS feed list is DATA, in `news_sources` — never a code constant.** All
@@ -117,8 +125,8 @@ first and owns `competitions`, `disciplines`, `profiles`, `teams`, and the
 `team_*` membership tables.
 
 - **Every table this repo creates is prefixed `news_`.** `news_articles`,
-  `news_reports`, `news_sources`, `news_sponsors`, `news_digest_subscribers`,
-  `news_discipline_topics`. The prefix is uniform, including on tables that do
+  `news_reports`, `news_sources`, `news_sponsors`, `news_discipline_topics`.
+  The prefix is uniform, including on tables that do
   not collide today — a rule with remembered exceptions is worse than one that
   is always true.
 - **Never alter a Portal table, its columns, or its RLS policies.** The Portal's

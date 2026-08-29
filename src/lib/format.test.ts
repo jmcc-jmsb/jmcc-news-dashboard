@@ -50,34 +50,3 @@ test('relTime degrades from minutes to a short date', () => {
 test('absDate renders en-CA regardless of host locale', () => {
   assert.match(absDate('2026-05-22T13:14:00Z'), /2026/);
 });
-
-/* The digest cron is a fixed 13:00 UTC, but Eastern is UTC-4 on daylight time
-   and UTC-5 otherwise. These pin BOTH sides, because the subscribe panel shows
-   this string to subscribers as a promise — a hardcoded hour would be wrong for
-   roughly half the year, and wrong in a way nobody notices until someone
-   complains their digest arrived an hour early. */
-test('digest label follows Eastern daylight time in both directions', async () => {
-  const { digestSendLabel, nextDigestSend } = await import('./format.ts');
-
-  // Mid-summer: Eastern is on daylight time, so 13:00 UTC is 09:00 local.
-  assert.equal(digestSendLabel(new Date('2026-07-15T00:00:00Z')), 'Monday, 9:00 a.m. EDT');
-
-  // Launch month, after clocks fall back: 13:00 UTC is 08:00 local, which is
-  // exactly the 8:00 AM the product promises.
-  assert.equal(digestSendLabel(new Date('2026-11-15T00:00:00Z')), 'Monday, 8:00 a.m. EST');
-
-  // The instant itself never moves — only its local name does.
-  assert.equal(nextDigestSend(new Date('2026-07-15T00:00:00Z')).toISOString(), '2026-07-20T13:00:00.000Z');
-  assert.equal(nextDigestSend(new Date('2026-11-15T00:00:00Z')).toISOString(), '2026-11-16T13:00:00.000Z');
-});
-
-test('nextDigestSend always lands on a future Monday', async () => {
-  const { nextDigestSend } = await import('./format.ts');
-  for (const iso of ['2026-11-16T12:59:00Z', '2026-11-16T13:00:01Z', '2026-11-17T00:00:00Z', '2026-11-22T23:59:00Z']) {
-    const now = new Date(iso);
-    const next = nextDigestSend(now);
-    assert.equal(next.getUTCDay(), 1, `${iso} did not resolve to a Monday`);
-    assert.equal(next.getUTCHours(), 13);
-    assert.ok(next.getTime() > now.getTime(), `${iso} resolved to a past send`);
-  }
-});

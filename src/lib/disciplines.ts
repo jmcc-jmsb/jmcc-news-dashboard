@@ -10,7 +10,7 @@ export interface Discipline {
 
 /**
  * The 11 ids are frozen (AGENTS.md "Do not change") — they key the article
- * table, the specs file, the bookmark records, and the digest preferences.
+ * table, the specs file, and the bookmark records.
  *
  * There is no keyword map here on purpose. The prototype's query terms move to
  * the `news_discipline_topics` Supabase table in Sprint 2 so coaches can retune

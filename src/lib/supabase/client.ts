@@ -11,7 +11,6 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from 'astro:env/
  *
  *   news_articles / news_reports / news_sources / news_discipline_topics — readable
  *   news_sponsors                                — only rows where active is true
- *   news_digest_subscribers                      — NO policy, so zero rows, ever
  *
  * The dashboard is public and unauthenticated, so there is no session to carry
  * and no reason to persist one.
