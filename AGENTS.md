@@ -35,15 +35,39 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 ## Technical Specs content
 - src/content/specs.json is CONTENT, not code. Never edit its values to make
   a test pass or to fill a gap. The owner supplies the real content.
+- src/content/specs.sample.json is DEMO content — generic textbook frameworks
+  for three disciplines, behind PUBLIC_USE_FIXTURES, banner-ed on screen. It
+  exists so the tab can be recorded and tested before the coaches deliver.
+  **Never copy it into specs.json.** It is not coach material.
 - Every discipline has a status: draft | review | published.
   Only "published" renders. draft/review show an in-development empty state.
 - Never render placeholder bullets. An empty section is correct and expected.
 - If no discipline is published, the Technical Specs tab hides itself.
 
 ## Sponsor tracking
-- Sponsors are competition-scoped and ship empty until the owner adds real
-  ones. Never fabricate sponsor data. The Sponsor Watch section hides itself
+There are TWO sponsor surfaces and they read from different places. Keep them
+separate.
+
+- **Sponsor Watch** (rail, on the News Feed) tags ingested articles to a
+  sponsor. Data: `news_sponsors` in Supabase, via `/api/sponsors`. Hides itself
   when there are zero active sponsors — don't render an empty rail.
+- **Sponsor Tracker** (its own tab) is the company-profile dashboard —
+  financials, goals, values. Data: `src/content/sponsors.json`, validated by
+  `lib/sponsors.ts` at build time. Same status pattern as specs.json: only
+  `published` renders, and the tab hides itself when none are.
+
+- **Never fabricate sponsor data.** Every metric needs a real `source` URL and
+  every profile an `asOf` date. Sample profiles live in
+  `src/content/sponsors.sample.json`, are gated behind `PUBLIC_USE_FIXTURES`,
+  use `example.com` for every source, and banner themselves on screen.
+- draft/review sponsors are counted but NEVER named on screen — an unannounced
+  sponsor is confidential.
+- A founding year is not a metric; it has its own `founded` field. Everything in
+  `metrics` is a magnitude, so every bar can be drawn honestly from zero.
+- Comparison charts are derived, not configured: a metric charts when two or
+  more published sponsors share a label AND a unit. Never chart the same label
+  across two units — the taller bar would be a lie.
+- Owner-facing guide: docs/EDITING_SPONSORS.md.
 
 ## Topic tuning
 - news_discipline_topics is a shared Supabase table, potentially also written to

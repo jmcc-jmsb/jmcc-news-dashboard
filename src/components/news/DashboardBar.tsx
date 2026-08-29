@@ -12,6 +12,8 @@ interface Props {
   bookmarksCount: number;
   /** False until at least one discipline is published (brief §3c). */
   showSpecsTab: boolean;
+  /** False until at least one sponsor profile is published. */
+  showSponsorsTab: boolean;
   /** Rendered on the client only, so the date is the reader's own. */
   edition: { label: string; dateStr: string };
 }
@@ -23,6 +25,7 @@ export function DashboardBar({
   setTab,
   bookmarksCount,
   showSpecsTab,
+  showSponsorsTab,
   edition,
 }: Props) {
   return (
@@ -61,6 +64,15 @@ export function DashboardBar({
               aria-current={tab === 'specs' ? 'page' : undefined}
             >
               Technical Specs
+            </button>
+          )}
+          {showSponsorsTab && (
+            <button
+              className={'nav-link ' + (tab === 'sponsors' ? 'active' : '')}
+              onClick={() => setTab('sponsors')}
+              aria-current={tab === 'sponsors' ? 'page' : undefined}
+            >
+              Sponsors
             </button>
           )}
           <button

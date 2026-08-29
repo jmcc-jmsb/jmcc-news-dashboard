@@ -5,12 +5,14 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Bookmark, DisciplineId, FeedItem, HistoryItem, Tab, Theme } from '../../lib/types';
 import { isDisciplineId } from '../../lib/disciplines';
 import { HAS_ANY_PUBLISHED_SPECS } from '../../lib/specs';
+import { HAS_ANY_PUBLISHED_SPONSORS } from '../../lib/sponsors';
 import { storage } from '../../lib/storage';
 import { DashboardBar } from './DashboardBar';
 import { DisciplineBar } from './DisciplineBar';
 import { NewsView } from './NewsView';
 import { SavedView } from './SavedView';
 import { SpecsView } from './SpecsView';
+import { SponsorsView } from './SponsorsView';
 
 /* The prototype read window.location during render, which crashes on the
    server. This component is mounted with client:only="react" (brief §12), so
@@ -23,7 +25,7 @@ function readQuery(): { discipline: DisciplineId; tab: Tab; aiOnly: boolean } {
   const t = p.get('tab') ?? '';
   return {
     discipline: isDisciplineId(d) ? d : 'finance',
-    tab: t === 'specs' || t === 'saved' ? t : 'news',
+    tab: t === 'specs' || t === 'sponsors' || t === 'saved' ? t : 'news',
     // In the URL so a filtered feed can be shared or bookmarked, the same way
     // the discipline already is.
     aiOnly: p.get('ai') === '1',
@@ -65,6 +67,7 @@ export default function Dashboard() {
      tab with no way back, so it falls through to the feed. */
   useEffect(() => {
     if (tab === 'specs' && !HAS_ANY_PUBLISHED_SPECS) setTab('news');
+    if (tab === 'sponsors' && !HAS_ANY_PUBLISHED_SPONSORS) setTab('news');
   }, [tab]);
 
   const isBookmarked = useCallback(
@@ -146,15 +149,18 @@ export default function Dashboard() {
         setTab={setTab}
         bookmarksCount={bookmarks.length}
         showSpecsTab={HAS_ANY_PUBLISHED_SPECS}
+        showSponsorsTab={HAS_ANY_PUBLISHED_SPONSORS}
         edition={edition}
       />
       <DisciplineBar
         discipline={discipline}
         setDiscipline={(d) => {
           setDiscipline(d);
-          if (tab === 'saved') setTab('news');
+          // Both of these are whole-dashboard views rather than per-discipline
+          // ones, so picking a discipline means the reader wants the feed.
+          if (tab === 'saved' || tab === 'sponsors') setTab('news');
         }}
-        disabled={tab === 'saved'}
+        disabled={tab === 'saved' || tab === 'sponsors'}
       />
       <main className="main">
         {tab === 'news' && (
@@ -167,6 +173,7 @@ export default function Dashboard() {
           />
         )}
         {tab === 'specs' && <SpecsView discipline={discipline} />}
+        {tab === 'sponsors' && <SponsorsView />}
         {tab === 'saved' && (
           <SavedView
             bookmarks={bookmarks}

@@ -2,7 +2,9 @@
 // ABOUTME: Only 'published' disciplines render; if none are, the Technical Specs tab hides itself.
 
 import { z } from 'zod';
+import { PUBLIC_USE_FIXTURES } from 'astro:env/client';
 import specsJson from '../content/specs.json';
+import sampleSpecsJson from '../content/specs.sample.json';
 import { DISCIPLINE_IDS } from './disciplines';
 import type { DisciplineId, DisciplineSpec } from './types';
 
@@ -25,7 +27,12 @@ const specsSchema = z.object(
   Object.fromEntries(DISCIPLINE_IDS.map((id) => [id, disciplineSpecSchema])),
 ).strict();
 
-const parsed = specsSchema.safeParse(specsJson);
+/* Same opt-in flag the feed and the sponsor tracker use. specs.sample.json
+   holds generic textbook frameworks for three disciplines so the tab can be
+   demonstrated before the coaches' real material lands — it is NOT coach
+   content and must never be copied into specs.json. Off by default; when it is
+   on, the tab banners itself. */
+const parsed = specsSchema.safeParse(PUBLIC_USE_FIXTURES ? sampleSpecsJson : specsJson);
 
 if (!parsed.success) {
   // Thrown at module load, which during `astro build` means the build fails.
@@ -59,3 +66,5 @@ export const PUBLISHED_COUNT = Object.values(SPECS).filter(
 ).length;
 
 export const HAS_ANY_PUBLISHED_SPECS = PUBLISHED_COUNT > 0;
+
+export const USING_SAMPLE_SPECS = PUBLIC_USE_FIXTURES;

@@ -45,7 +45,10 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
   live AI filter, honest empty/unavailable states — Sprint 3
 - ❌ Weekly email digest — built in Sprint 4, then **cut before merge**. See
   "Why there is no newsletter" below.
+- ✅ Sponsor Tracker — a per-sponsor profile dashboard (financials, goals,
+  values) on its own tab, driven by `src/content/sponsors.json`
 - ⬜ Applying migrations and a real ingest run — blocked on credentials
+- ⬜ Real sponsor profiles — blocked on sponsorship closing
 
 The UI now reads from the API rather than importing fixtures. With no database
 configured the feed renders an honest "not connected yet" state; set
@@ -138,8 +141,46 @@ The website's `Nav.astro` was copied in during Sprint 0 and then removed on the
 owner's call — the dashboard is not the website. `data/site.json` and the colour
 shield went with it, since Nav was their only consumer.
 
+## Two sponsor surfaces, two data sources
+
+Easy to confuse, so: **Sponsor Watch** is the rail block on the News Feed that
+surfaces ingested articles about a sponsor. It reads `news_sponsors` in Supabase
+through `/api/sponsors`, and its job is article tagging.
+
+**Sponsor Tracker** is the tab. It is a company-profile dashboard — revenue,
+headcount, stated goals and values — and it reads `src/content/sponsors.json`,
+validated by `lib/sponsors.ts` at build time. Nothing about it touches the
+database.
+
+They stay separate because they answer different questions and change on
+different clocks: article tagging follows the ingest job, company research
+follows the owner.
+
+The comparison charts are derived from the content rather than configured — a
+metric is charted when two or more published sponsors report the same label in
+the same unit. See `docs/EDITING_SPONSORS.md`.
+
+## Sharing a preview with testers
+
+Preview deployments, not a tunnel. Push any branch and Vercel builds it at a
+stable URL that survives your laptop sleeping:
+
+    git push origin <branch>
+    # -> https://jmcc-news-dashboard-git-<branch>-jmcc-jmsb.vercel.app
+
+One-time setup: add `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+`SUPABASE_SECRET_KEY` and `CRON_SECRET` to the Vercel project's **Preview**
+environment (Settings -> Environment Variables). Without them the feed renders
+its honest "not connected" state rather than failing.
+
+To show the layout before the database is live, set `PUBLIC_USE_FIXTURES=true`
+in the Preview environment as well. Every response is then marked as sample data
+and banner-ed on screen. **Never set it in Production.**
+
 ## Documentation
 
 - `AGENTS.md` (symlinked as `CLAUDE.md`) — conventions and hard rules
 - `docs/EDITING_SPECS.md` — how a non-developer edits Technical Specs content
+- `docs/EDITING_SPONSORS.md` — how a non-developer edits Sponsor Tracker content
 - `docs/CRON_OPTIONS.md` — why ingest runs once a day, and how to change it
+- `docs/PILOT_WALKTHROUGH.md` — shot-by-shot script for the demo recording

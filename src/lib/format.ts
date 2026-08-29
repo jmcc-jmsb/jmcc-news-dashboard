@@ -29,6 +29,13 @@ export function relTime(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
+/** Grouped digits: 12400 -> "12,400", 4.1 -> "4.1". The dashboard sets
+ *  font-variant-numeric: tabular-nums, so grouped figures line up in a column.
+ *  Years are never passed through here — they are not metrics (lib/sponsors). */
+export function num(n: number): string {
+  return new Intl.NumberFormat('en-CA', { maximumFractionDigits: 2 }).format(n);
+}
+
 /** "2026 May 22". en-CA throughout — the dashboard is English-only (brief §1). */
 export function absDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', {

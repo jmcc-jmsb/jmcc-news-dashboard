@@ -59,7 +59,7 @@ export interface Bookmark {
 export type HistoryItem = Bookmark;
 
 export type Theme = 'light' | 'dark';
-export type Tab = 'news' | 'specs' | 'saved';
+export type Tab = 'news' | 'specs' | 'sponsors' | 'saved';
 
 /** Technical Specs, loaded from src/content/specs.json (brief §3c).
  *  Three sections only — overview and glossary were cut deliberately. */

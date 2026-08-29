@@ -869,6 +869,131 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* The prototype's Footer lived here. Footer.astro replaces it (brief §12),
    which also removed eight of this file's raw hex values. */
 
+/* ----------- SPONSOR TRACKER ----------- */
+.sponsors { display: flex; flex-direction: column; }
+
+/* Comparison charts, one per metric two or more sponsors both report. auto-fit
+   rather than a fixed count: with one shared metric it is a single wide chart,
+   with four it is a grid, and neither case needs a breakpoint of its own. */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 32px;
+  margin-bottom: 40px;
+}
+.chart { margin: 0; }
+.chart-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.chart-unit { color: var(--ink-mute); }
+
+.bar-list { display: flex; flex-direction: column; gap: 12px; }
+/* The name sits on its own line above the bar rather than in a fixed-width
+   first column. Company names are long and unpredictable — "Meridian Capital
+   Partners" ellipsised to "Meridian Capi…" is a chart you cannot read, and any
+   column wide enough for the worst case wastes the bar's width in every other
+   row. */
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name name" "track value";
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+.bar-name { grid-area: name; color: var(--ink-soft); }
+/* The track carries the baseline so a short bar still reads as a measurement
+   against a scale rather than as a stray block. */
+.bar-track { grid-area: track; background: var(--bg-sunken); height: 14px; border: 1px solid var(--line); }
+.bar-fill { display: block; height: 100%; background: var(--accent); }
+.bar-value {
+  grid-area: value;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 4ch;
+  text-align: right;
+}
+
+.sponsor-card {
+  border-top: 1px solid var(--line);
+  padding: 28px 0;
+}
+.sponsor-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.sponsor-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+.sponsor-meta { color: var(--ink-mute); margin: 6px 0 0; }
+.sponsor-summary { color: var(--ink-soft); font-size: 14px; max-width: 68ch; margin: 0 0 16px; }
+
+.sponsor-comps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.badge-flat {
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+  color: var(--ink-mute);
+}
+
+/* Every tile links to the page its number came from — a figure a delegate
+   might quote in a pitch should be one click from its source. */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.stat-tile {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px;
+  background: var(--bg-elev);
+  text-decoration: none;
+  transition: background .12s;
+}
+.stat-tile:hover { background: var(--bg-sunken); }
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.stat-label { color: var(--ink-soft); }
+.stat-source { color: var(--ink-mute); text-decoration: underline; }
+
+.sponsor-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 8px 40px;
+}
+
+.sponsor-foot {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-mute);
+}
+.sponsor-sources a { color: var(--accent-ink); }
+
+@media (max-width: 700px) {
+  .sponsor-head { flex-direction: column; }
+  .bar-row { font-size: 12px; }
+}
+
 /* responsive */
 @media (max-width: 700px) {
   .header-meta { font-size: 9px; padding: 6px 16px; }

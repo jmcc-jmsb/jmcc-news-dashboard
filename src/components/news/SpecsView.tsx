@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DisciplineId } from '../../lib/types';
 import { labelFor } from '../../lib/disciplines';
-import { specFor } from '../../lib/specs';
+import { USING_SAMPLE_SPECS, specFor } from '../../lib/specs';
+import { SampleDataBanner } from './ui/SampleDataBanner';
 
 const SECTIONS = [
   ['frameworks', 'Key Frameworks'],
@@ -89,7 +90,9 @@ export function SpecsView({ discipline }: Props) {
   }
 
   return (
-    <div className="specs-layout">
+    <>
+      {USING_SAMPLE_SPECS && <SampleDataBanner kind="specs" />}
+      <div className="specs-layout">
       <aside className="specs-nav">
         <div className="kicker meta">TECHNICAL SPECS</div>
         <h2 className="section-title">{label}</h2>
@@ -167,6 +170,7 @@ export function SpecsView({ discipline }: Props) {
           </ul>
         </section>
       </article>
-    </div>
+      </div>
+    </>
   );
 }
