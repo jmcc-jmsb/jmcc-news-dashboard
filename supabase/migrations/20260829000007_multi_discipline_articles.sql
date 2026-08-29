@@ -35,15 +35,19 @@
 -- constraints, so those are restated below" — and then does not restate them.
 --
 -- That comment is wrong, which is lucky. INCLUDING ALL implies INCLUDING
--- INDEXES, and per the PostgreSQL documentation INCLUDING INDEXES *does* create
--- the PRIMARY KEY, UNIQUE and EXCLUDE constraints of the source table on the new
--- one. So news_reports has an id primary key and a url unique after all, under
--- auto-generated names — not the no-key table the comment implies.
+-- INDEXES, and INCLUDING INDEXES *does* create the PRIMARY KEY, UNIQUE and
+-- EXCLUDE constraints of the source table on the new one. So news_reports has
+-- an id primary key and a url unique after all — not the no-key table the
+-- comment implies, and no latent upsert failure waiting for the first real run.
 --
--- Because that is inference from the docs rather than something verified against
--- this project's live database, the drops below are written to be
--- name-independent and to tolerate a constraint being either present or absent.
--- They are correct whichever way it actually is.
+-- Verified on postgres:16-alpine by applying 20260820000001 unmodified: it
+-- produces news_reports_pkey PRIMARY KEY (id) and news_reports_url_key
+-- UNIQUE (url), exactly as it does for news_articles.
+--
+-- The drops below are still written name-independently. Constraints created by
+-- LIKE take auto-generated names, and enumerating pg_constraint is both correct
+-- and re-runnable, where a guessed name behind `if exists` would silently no-op
+-- if the guess were ever wrong.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop every primary key and unique constraint on both tables, whatever they are
@@ -70,6 +74,7 @@ end $$;
 -- Defensive, and a no-op on the tables as they stand: the old id-only key made
 -- (id, discipline) unique by construction. This exists so the migration is also
 -- correct against a database where ingest somehow wrote before it was applied.
+-- Re-running the whole migration is safe and preserves rows; that is tested.
 delete from news_articles a
   using news_articles b
  where a.ctid < b.ctid and a.id = b.id and a.discipline = b.discipline;
