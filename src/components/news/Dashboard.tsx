@@ -1,7 +1,7 @@
 // ABOUTME: Root React island — owns theme, tab, discipline, bookmarks, and case history.
 // ABOUTME: Mounted client:only, so reading localStorage and window during render is safe here.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Bookmark, DisciplineId, FeedItem, HistoryItem, Tab, Theme } from '../../lib/types';
 import { isDisciplineId } from '../../lib/disciplines';
 import { HAS_ANY_PUBLISHED_SPECS } from '../../lib/specs';
@@ -110,19 +110,13 @@ export default function Dashboard() {
     setHistory((curr) => curr.map((h) => (h.id === id ? { ...h, ...fields } : h)));
   }, []);
 
-  /* Filtering now happens in the database, not here: /api/news takes ?ai=1 and
+  /* Filtering happens in the database, not here: /api/news takes ?ai=1 and
      adds `where ai_relevant`. It is still a FILTER and not a sort — §3f's
      default is badge-don't-reorder, so the read query keeps published_at desc
      as the ordering in every case.
 
-     The count for the pill comes back up from NewsView, because only the fetch
-     knows how many matched. While the unfiltered feed is loaded we can count it
-     directly; once the filter is on, every loaded row matches by definition. */
-  const [loadedArticles, setLoadedArticles] = useState<FeedItem[]>([]);
-  const aiCount = useMemo(
-    () => (aiOnly ? loadedArticles.length : loadedArticles.filter((a) => a.aiRelevant).length),
-    [loadedArticles, aiOnly],
-  );
+     The toggle itself lives in NewsView, beside Refresh: only the fetch knows
+     how many articles matched, and the filter only ever affects the feed. */
 
   // Client-side so the date is the reader's, not the build machine's.
   const now = new Date();
@@ -161,19 +155,15 @@ export default function Dashboard() {
           if (tab === 'saved') setTab('news');
         }}
         disabled={tab === 'saved'}
-        aiOnly={aiOnly}
-        setAiOnly={setAiOnly}
-        aiCount={aiCount}
       />
       <main className="main">
         {tab === 'news' && (
           <NewsView
             discipline={discipline}
             aiOnly={aiOnly}
-            clearAiFilter={() => setAiOnly(false)}
+            setAiOnly={setAiOnly}
             isBookmarked={isBookmarked}
             toggleBookmark={toggleBookmark}
-            onArticlesChange={setLoadedArticles}
           />
         )}
         {tab === 'specs' && <SpecsView discipline={discipline} />}

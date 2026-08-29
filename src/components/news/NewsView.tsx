@@ -19,11 +19,9 @@ const PAGE_SIZE = 12;
 interface Props {
   discipline: DisciplineId;
   aiOnly: boolean;
-  clearAiFilter: () => void;
+  setAiOnly: (v: boolean) => void;
   isBookmarked: (id: string) => boolean;
   toggleBookmark: (item: FeedItem) => void;
-  /** Reported upward so the AI filter pill can show a count. */
-  onArticlesChange?: (items: FeedItem[]) => void;
 }
 
 /**
@@ -40,10 +38,9 @@ function freshnessLine(lastIngestedAt: string | null): string | null {
 export function NewsView({
   discipline,
   aiOnly,
-  clearAiFilter,
+  setAiOnly,
   isBookmarked,
   toggleBookmark,
-  onArticlesChange,
 }: Props) {
   const disciplineLabel = labelFor(discipline);
   const [visible, setVisible] = useState(PAGE_SIZE);
@@ -59,12 +56,10 @@ export function NewsView({
   const articles = feed.status === 'ready' ? feed.items : [];
   const articleCount = articles.length;
 
-  useEffect(() => {
-    onArticlesChange?.(articles);
-    // Depending on the array itself would loop — it is a new reference every
-    // render. Status, count and query identity are what actually change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feed.status, articleCount, discipline, aiOnly]);
+  // With the filter on, every loaded row matches by definition; with it off,
+  // count the badged ones. Either way the number describes what is on screen,
+  // so the toggle is never a blind guess that lands on an empty feed.
+  const aiCount = aiOnly ? articleCount : articles.filter((a) => a.aiRelevant).length;
 
   const shown = articles.slice(0, visible);
   const canLoadMore = visible < articleCount;
@@ -91,10 +86,30 @@ export function NewsView({
               {subline}
             </p>
           </div>
-          <button className="ghost-btn" onClick={() => setRefreshKey((k) => k + 1)}>
-            {Icon.refresh}
-            <span>Refresh</span>
-          </button>
+          {/* Sits with Refresh, next to the discipline title, rather than at
+              the far end of the discipline bar where it read as a 12th
+              discipline and was easy to miss. It filters — it does NOT reorder
+              (brief §3f); recency stays the primary sort in every case. */}
+          <div className="section-actions">
+            <button
+              className={'ghost-btn ' + (aiOnly ? 'active' : '')}
+              onClick={() => setAiOnly(!aiOnly)}
+              disabled={aiCount === 0 && !aiOnly}
+              aria-pressed={aiOnly}
+              title={
+                aiCount === 0
+                  ? 'No articles with an AI angle in this discipline'
+                  : `${aiCount} article${aiCount !== 1 ? 's' : ''} with an AI angle`
+              }
+            >
+              <span>AI Angle</span>
+              {aiCount > 0 && <span className="count">{aiCount}</span>}
+            </button>
+            <button className="ghost-btn" onClick={() => setRefreshKey((k) => k + 1)}>
+              {Icon.refresh}
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
 
         <div className="article-list">
@@ -119,7 +134,7 @@ export function NewsView({
             (aiOnly ? (
               <div className="empty">
                 <p>No {disciplineLabel} articles have an AI angle right now.</p>
-                <button className="ghost-btn" onClick={clearAiFilter}>
+                <button className="ghost-btn" onClick={() => setAiOnly(false)}>
                   <span>Show all {disciplineLabel} articles</span>
                 </button>
               </div>

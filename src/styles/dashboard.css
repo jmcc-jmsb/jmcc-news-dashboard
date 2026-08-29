@@ -358,7 +358,14 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: transparent;
   transition: all .12s;
 }
-.ghost-btn:hover { background: var(--accent); color: var(--bg); }
+.ghost-btn:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
+.ghost-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.ghost-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ghost-btn .count { font-size: 10px; font-variant-numeric: tabular-nums; opacity: 0.75; }
+
+/* Section-head actions: the AI Angle filter and Refresh, side by side beside
+   the discipline title. */
+.section-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* ----------- ARTICLE CARD ----------- */
 .article-list { display: flex; flex-direction: column; }
@@ -407,22 +414,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   margin-right: 6px;
   flex-shrink: 0;
 }
-
-/* The filter pill. Separated from the discipline group by margin-left:auto so
-   it reads as a different kind of control — disciplines are a single choice,
-   this is an independent on/off. */
-.pill-ai {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.pill-ai .count {
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.75;
-}
-.pill-ai:disabled { opacity: 0.45; }
 
 .discipline-tag {
   font-family: var(--font-sans);
