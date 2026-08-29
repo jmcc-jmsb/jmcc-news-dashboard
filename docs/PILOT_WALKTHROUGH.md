@@ -54,11 +54,15 @@ Point out the header strip: edition number, date, "JMCC Internal · Public".
 
 ### 00:30 — The discipline bar (45s)
 
-Click through three or four disciplines. Let the feed reload each time.
+Click through the four competition sections first, then three or four
+disciplines within one. Let the feed reload each time.
 
-> "Eleven disciplines, matching the competition. Picking one filters everything
-> below it. The choice is in the URL, so a coach can send a delegate a link
-> straight to their discipline's feed."
+> "Four competition sections across the top — JDC and JDCC share one, since
+> their disciplines are nearly identical, then SMNG, FO and Happening
+> Marketing. Picking a section swaps the disciplines below it; picking a
+> discipline filters everything under that. The discipline is in the URL and
+> the section follows from it, so a coach can send a delegate one link straight
+> to their case's feed."
 
 Copy the URL from the address bar and show it.
 

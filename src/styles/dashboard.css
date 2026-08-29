@@ -245,6 +245,32 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   margin-right: 6px;
 }
 
+/* ----------- COMPETITION BAR ----------- */
+/* Sits above the discipline pills. Deliberately NOT sticky: the discipline bar
+   below it already is, and stacking two sticky rows eats a third of a phone
+   viewport before any news appears. */
+.competition-bar {
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+}
+.competition-bar.is-disabled { opacity: 0.5; pointer-events: none; }
+.competition-bar-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 10px var(--gutter);
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+.pill-comp { font-weight: 600; }
+.competition-events {
+  margin-left: auto;
+  color: var(--ink-mute);
+  text-align: right;
+}
+.competition-events a { color: var(--accent-ink); }
+@media (max-width: 900px) { .competition-events { display: none; } }
+
 /* ----------- DISCIPLINE BAR ----------- */
 .discipline-bar {
   background: var(--bg-sunken);

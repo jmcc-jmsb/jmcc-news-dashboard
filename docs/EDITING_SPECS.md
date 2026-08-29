@@ -23,7 +23,7 @@ other file. This guide is everything you need.
 
 ## What the file looks like
 
-One entry per discipline. All eleven are already there:
+One entry per discipline. The eleven JDC/JDCC disciplines are already there:
 
 ```json
 {
@@ -99,9 +99,13 @@ If you would rather check before building, paste the file into
 
 ---
 
-## The eleven discipline keys
+## The discipline keys
 
-These are fixed. Do not rename, add, or remove any of them:
+These are fixed. Do not rename or remove any of them. A discipline may be
+**omitted entirely** — that means "not written yet" and renders the
+in-development state, which is the correct way to leave one blank.
+
+The eleven JDC/JDCC disciplines:
 
 `finance`, `accounting`, `tax`, `marketing`, `strategy`, `digital-strategy`,
 `entrepreneurship`, `hr`, `pom`, `sustainability`, `international`

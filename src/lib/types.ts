@@ -1,19 +1,11 @@
 // ABOUTME: Shared data models — PRD §7, extended with sponsor_id and ai_relevant.
 // ABOUTME: Feed items are read-only; Bookmark/HistoryItem are user state that maps 1:1 onto Supabase.
 
-/** One of the 11 canonical discipline ids. Never a free string. */
-export type DisciplineId =
-  | 'finance'
-  | 'accounting'
-  | 'tax'
-  | 'marketing'
-  | 'strategy'
-  | 'digital-strategy'
-  | 'entrepreneurship'
-  | 'hr'
-  | 'pom'
-  | 'sustainability'
-  | 'international';
+/* Derived from the DISCIPLINES registry rather than restated here. This used
+   to be a hand-written 11-member union that had to be edited in lockstep with
+   disciplines.ts; re-exporting keeps every existing import path working. */
+import type { DisciplineId } from './disciplines';
+export type { DisciplineId };
 
 export type ItemType = 'article' | 'report';
 

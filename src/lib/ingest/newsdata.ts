@@ -12,7 +12,13 @@ const ENDPOINT = 'https://newsdata.io/api/1/latest';
  * Brief §10 budgeted ~88–103 credits against four runs a day. **We run once a
  * day** (Vercel Hobby permits one cron run daily — see docs/CRON_OPTIONS.md),
  * so a single run's spend is roughly a quarter of that: ~22 credits for the 11
- * disciplines plus ~1 per active sponsor.
+ * JDC/JDCC disciplines plus ~1 per active sponsor.
+ *
+ * **The registry is now 33** (SMNG, FO and HM added 22), and run.ts issues one
+ * query per discipline — so budget ~66 credits per run, not ~22. That still
+ * clears the 150 ceiling and the 200/day tier, but the headroom is a third of
+ * what it was. Adding a fifth competition is the point at which this needs
+ * re-checking rather than assuming.
  *
  * The ceiling is enforced anyway. Quota exhaustion is silent — NewsData simply
  * stops returning articles — and a feed that empties during competition week

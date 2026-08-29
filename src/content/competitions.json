@@ -1,0 +1,148 @@
+{
+  "jdc": {
+    "label": "JDC / JDCC",
+    "blurb": "Quebec's and Central Canada's flagship inter-university commerce games. They share a section because their academic disciplines are nearly identical.",
+    "events": [
+      {
+        "slug": "jeux-du-commerce",
+        "name": "Jeux du Commerce",
+        "location": "Quebec City, QC",
+        "url": "https://jeuxducommerce.ca/fr/",
+        "disciplines": [
+          "accounting",
+          "digital-strategy",
+          "entrepreneurship",
+          "finance",
+          "hr",
+          "international",
+          "marketing",
+          "pom",
+          "strategy",
+          "sustainability",
+          "tax"
+        ]
+      },
+      {
+        "slug": "jdc-central",
+        "name": "JDC Central",
+        "location": "St. Catharines, ON",
+        "url": "https://cabsonline.ca/jdcc/",
+        "disciplines": [
+          "accounting",
+          "digital-strategy",
+          "entrepreneurship",
+          "finance",
+          "hr",
+          "international",
+          "marketing",
+          "strategy"
+        ]
+      }
+    ],
+    "disciplines": [
+      "accounting",
+      "digital-strategy",
+      "entrepreneurship",
+      "finance",
+      "hr",
+      "international",
+      "marketing",
+      "pom",
+      "strategy",
+      "sustainability",
+      "tax"
+    ]
+  },
+  "smng": {
+    "label": "SMNG",
+    "blurb": "Symposium en Management — the REFAEC circuit's management competition, renamed from HR Symposium for 2026-2027.",
+    "events": [
+      {
+        "slug": "management-symposium",
+        "name": "Management Symposium",
+        "location": "Trois-Rivières, QC",
+        "url": "https://www.refaec.ca/symposium-grh?lang=en",
+        "disciplines": [
+          "human-resource-management",
+          "change-management",
+          "digital-transformation",
+          "project-management",
+          "mergers-acquisitions",
+          "management-of-smes",
+          "market-targeting"
+        ]
+      }
+    ],
+    "disciplines": [
+      "change-management",
+      "digital-transformation",
+      "human-resource-management",
+      "management-of-smes",
+      "market-targeting",
+      "mergers-acquisitions",
+      "project-management"
+    ]
+  },
+  "fo": {
+    "label": "FO",
+    "blurb": "Omnium Financier — the REFAEC circuit's finance competition.",
+    "events": [
+      {
+        "slug": "financial-open",
+        "name": "Financial Open",
+        "location": "Moncton, NB",
+        "url": "https://www.refaec.ca/omnium-financier?lang=en",
+        "disciplines": [
+          "personal-finance",
+          "corporate-finance",
+          "financial-markets",
+          "taxation",
+          "financial-accounting",
+          "management-accounting",
+          "stock-market-simulation",
+          "cfa-ethics-challenge"
+        ]
+      }
+    ],
+    "disciplines": [
+      "cfa-ethics-challenge",
+      "corporate-finance",
+      "financial-accounting",
+      "financial-markets",
+      "management-accounting",
+      "personal-finance",
+      "stock-market-simulation",
+      "taxation"
+    ]
+  },
+  "hm": {
+    "label": "HM",
+    "blurb": "Happening Marketing — the REFAEC circuit's marketing competition.",
+    "events": [
+      {
+        "slug": "happening-marketing",
+        "name": "Happening Marketing",
+        "location": "Lévis, QC",
+        "url": "https://www.happeningmarketing.ca/",
+        "disciplines": [
+          "strategic-marketing",
+          "experiential-marketing",
+          "digital-marketing",
+          "b2b-marketing",
+          "international-marketing",
+          "hr-marketing",
+          "request-for-agency-proposal"
+        ]
+      }
+    ],
+    "disciplines": [
+      "b2b-marketing",
+      "digital-marketing",
+      "experiential-marketing",
+      "hr-marketing",
+      "international-marketing",
+      "request-for-agency-proposal",
+      "strategic-marketing"
+    ]
+  }
+}

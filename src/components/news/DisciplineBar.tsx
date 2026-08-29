@@ -1,16 +1,22 @@
-// ABOUTME: The 11 discipline filter pills, disabled while the Saved tab is open.
+// ABOUTME: The selected competition's discipline pills, disabled while the Saved tab is open.
 // ABOUTME: Pills are square per the zero-radius brand rule; active uses accent, not gold-on-cream.
 
-import { DISCIPLINES } from '../../lib/disciplines';
+import { disciplinesIn } from '../../lib/disciplines';
 import type { DisciplineId } from '../../lib/types';
 
 interface Props {
   discipline: DisciplineId;
   setDiscipline: (d: DisciplineId) => void;
+  /** Only this section's disciplines render. Every id belongs to exactly one
+   *  section, so the full 33-pill registry is never shown at once — which is
+   *  also what keeps this sticky bar the same height it has always been. */
+  competition: string;
   disabled: boolean;
 }
 
-export function DisciplineBar({ discipline, setDiscipline, disabled }: Props) {
+export function DisciplineBar({ discipline, setDiscipline, competition, disabled }: Props) {
+  const disciplines = disciplinesIn(competition);
+
   return (
     <div className={'discipline-bar ' + (disabled ? 'is-disabled' : '')}>
       <div className="discipline-bar-inner">
@@ -18,7 +24,7 @@ export function DisciplineBar({ discipline, setDiscipline, disabled }: Props) {
           DISCIPLINE
         </span>
         <div className="pills" role="group" aria-labelledby="discipline-label">
-          {DISCIPLINES.map((d) => (
+          {disciplines.map((d) => (
             <button
               key={d.id}
               className={'pill ' + (d.id === discipline ? 'active' : '')}

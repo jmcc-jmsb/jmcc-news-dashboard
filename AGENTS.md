@@ -69,6 +69,24 @@ separate.
   across two units — the taller bar would be a lie.
 - Owner-facing guide: docs/EDITING_SPONSORS.md.
 
+## Competitions
+- Four sections: JDC/JDCC (one section, two events), SMNG, FO, HM. Content is
+  src/content/competitions.json, derived from jmcc-website's competitions.json.
+- **Every discipline belongs to exactly ONE competition.** The 33 ids are
+  disjoint, because the source registry already distinguishes each
+  competition's variant by slug (tax vs taxation, accounting vs
+  financial-accounting, marketing vs strategic-marketing).
+- That disjointness is load-bearing. It is why `competition` is DERIVED from
+  the discipline rather than stored on every article — no competition column,
+  no composite key, no migration. **Do not introduce a discipline id that
+  appears in two sections**; it would break the derivation, the URL contract,
+  and `labelFor()` all at once.
+- The URL carries `?discipline` only. The competition follows from it, so a
+  shared link cannot open with the two halves disagreeing.
+- Event formats and involvement events get no news: social, participation,
+  sports, quiz, surprise, debate, 24-hour-interactive. The original eleven
+  already excluded JDC's formats; the same rule was applied to the other three.
+
 ## Topic tuning
 - news_discipline_topics is a shared Supabase table, potentially also written to
   by the separate Delegate Portal project. Treat it as external data the
@@ -82,7 +100,9 @@ separate.
 ## Do not change
 - localStorage keys: jmcc_theme, jmcc_bookmarks, jmcc_case_history
 - The bookmark object shape — it maps 1:1 onto the Supabase schema
-- The 11 discipline ids
+- The 11 JDC/JDCC discipline ids. The REGISTRY is open — SMNG, FO and HM added
+  22 more in src/lib/disciplines.ts — but those original eleven values are
+  frozen: they key the article table, specs.json and the bookmark records.
 - The h() hashing function — it is the ingest dedupe key
 - The specs page has THREE sections: frameworks, metrics, sources.
   Overview and Glossary were cut deliberately. Do not re-add them.

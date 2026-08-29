@@ -3,11 +3,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Bookmark, DisciplineId, FeedItem, HistoryItem, Tab, Theme } from '../../lib/types';
-import { isDisciplineId } from '../../lib/disciplines';
+import { competitionOf, disciplinesIn, isDisciplineId } from '../../lib/disciplines';
+import { DEFAULT_COMPETITION, isCompetitionId } from '../../lib/competitions';
 import { HAS_ANY_PUBLISHED_SPECS } from '../../lib/specs';
 import { HAS_ANY_PUBLISHED_SPONSORS } from '../../lib/sponsors';
 import { storage } from '../../lib/storage';
 import { DashboardBar } from './DashboardBar';
+import { CompetitionBar } from './CompetitionBar';
 import { DisciplineBar } from './DisciplineBar';
 import { NewsView } from './NewsView';
 import { SavedView } from './SavedView';
@@ -19,12 +21,31 @@ import { SponsorsView } from './SponsorsView';
    there is no server render to crash — and no hydration mismatch from the
    localStorage initialisers below either. That directive is doing real work;
    do not swap it for client:load. */
-function readQuery(): { discipline: DisciplineId; tab: Tab; aiOnly: boolean } {
+function readQuery(): {
+  competition: string;
+  discipline: DisciplineId;
+  tab: Tab;
+  aiOnly: boolean;
+} {
   const p = new URLSearchParams(window.location.search);
   const d = p.get('discipline') ?? '';
+  const c = p.get('competition') ?? '';
   const t = p.get('tab') ?? '';
+
+  /* The discipline decides the competition, not the other way round: ids are
+     disjoint across sections, so a discipline names its section unambiguously
+     and a shared link cannot open with the two out of sync. An explicit
+     ?competition is only consulted when the discipline is missing or unknown. */
+  const discipline: DisciplineId = isDisciplineId(d) ? d : 'finance';
+  const competition = isDisciplineId(d)
+    ? (competitionOf(d) as string)
+    : isCompetitionId(c)
+      ? c
+      : DEFAULT_COMPETITION;
+
   return {
-    discipline: isDisciplineId(d) ? d : 'finance',
+    competition,
+    discipline: isDisciplineId(d) ? discipline : (disciplinesIn(competition)[0].id as DisciplineId),
     tab: t === 'specs' || t === 'sponsors' || t === 'saved' ? t : 'news',
     // In the URL so a filtered feed can be shared or bookmarked, the same way
     // the discipline already is.
@@ -41,6 +62,7 @@ function writeQuery(next: Record<string, string | null>) {
 
 export default function Dashboard() {
   const initial = readQuery();
+  const [competition, setCompetition] = useState<string>(initial.competition);
   const [discipline, setDiscipline] = useState<DisciplineId>(initial.discipline);
   const [tab, setTab] = useState<Tab>(initial.tab);
   const [aiOnly, setAiOnly] = useState(initial.aiOnly);
@@ -56,11 +78,22 @@ export default function Dashboard() {
   useEffect(() => storage.writeHistory(history), [history]);
   useEffect(() => {
     writeQuery({
+      // Derivable from the discipline, so it stays out of the URL — one source
+      // of truth, and no way to share a link whose two halves disagree.
       discipline,
       tab: tab === 'news' ? null : tab,
       ai: aiOnly ? '1' : null,
     });
   }, [discipline, tab, aiOnly]);
+
+  /* Switching section moves to that section's first discipline. Sections share
+     no disciplines, so the current one is never valid in the new section and
+     leaving it would query a discipline the pills no longer show. */
+  const changeCompetition = useCallback((next: string) => {
+    setCompetition(next);
+    setDiscipline(disciplinesIn(next)[0].id as DisciplineId);
+    if (tab === 'saved') setTab('news');
+  }, [tab]);
 
   /* With zero disciplines published the Technical Specs tab does not exist
      (brief §3c). A stale ?tab=specs URL would otherwise strand a reader on a
@@ -132,19 +165,28 @@ export default function Dashboard() {
         showSpecsTab={HAS_ANY_PUBLISHED_SPECS}
         showSponsorsTab={HAS_ANY_PUBLISHED_SPONSORS}
       />
-      {/* Absent on Sponsors, not greyed out: sponsor profiles are not scoped
-          to a discipline at all, so a disabled filter there is a control that
-          could never have applied. Saved keeps the disabled bar — its contents
-          ARE per-discipline, so the filter is meaningful, just not live. */}
+      {/* Both bars are absent on Sponsors, not greyed out: sponsor profiles
+          are not scoped to a competition or a discipline, so a disabled filter
+          there is a control that could never have applied. Saved keeps its
+          disabled bars — saved items ARE per-discipline, so the filter is
+          meaningful, just not live. */}
       {tab !== 'sponsors' && (
-        <DisciplineBar
-          discipline={discipline}
-          setDiscipline={(d) => {
-            setDiscipline(d);
-            if (tab === 'saved') setTab('news');
-          }}
-          disabled={tab === 'saved'}
-        />
+        <>
+          <CompetitionBar
+            competition={competition}
+            setCompetition={changeCompetition}
+            disabled={tab === 'saved'}
+          />
+          <DisciplineBar
+            discipline={discipline}
+            setDiscipline={(d) => {
+              setDiscipline(d);
+              if (tab === 'saved') setTab('news');
+            }}
+            competition={competition}
+            disabled={tab === 'saved'}
+          />
+        </>
       )}
       <main className="main">
         {tab === 'news' && (
