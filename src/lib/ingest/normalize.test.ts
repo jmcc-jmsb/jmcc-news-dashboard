@@ -10,7 +10,7 @@ import {
   cleanText,
   normalizeItem,
 } from './normalize';
-import { dedupeById, duplicateCount } from './dedupe';
+import { dedupeByIdAndDiscipline, duplicateCount } from './dedupe';
 import { h } from '../format';
 
 test('applies the source mappings named in brief §10', () => {
@@ -120,7 +120,7 @@ test('dedupe collapses one story arriving from several queries', () => {
     mk(url, '2026-05-22T09:00:00Z'), // the original wire copy
     mk('https://example.com/other', '2026-05-22T10:00:00Z'),
   ];
-  const out = dedupeById(batch);
+  const out = dedupeByIdAndDiscipline(batch);
   assert.equal(out.length, 2);
   assert.equal(duplicateCount(batch), 1);
   // Earliest publication wins — the later one is a syndication.
@@ -134,17 +134,77 @@ test('dedupe never loses an AI flag that only one copy carried', () => {
     discipline: 'Finance', disciplineId: 'finance' as const, aiRelevant, sponsorId: null,
   });
   // Whichever order they arrive in, the surviving row is flagged.
-  assert.equal(dedupeById([mk('2026-05-22T09:00:00Z', false), mk('2026-05-22T15:00:00Z', true)])[0]?.aiRelevant, true);
-  assert.equal(dedupeById([mk('2026-05-22T15:00:00Z', true), mk('2026-05-22T09:00:00Z', false)])[0]?.aiRelevant, true);
+  assert.equal(dedupeByIdAndDiscipline([mk('2026-05-22T09:00:00Z', false), mk('2026-05-22T15:00:00Z', true)])[0]?.aiRelevant, true);
+  assert.equal(dedupeByIdAndDiscipline([mk('2026-05-22T15:00:00Z', true), mk('2026-05-22T09:00:00Z', false)])[0]?.aiRelevant, true);
 });
 
-test('a deduped batch is safe to upsert — no id appears twice', () => {
+/* The bug this replaced: keying on id alone meant a story matching several
+   disciplines was collapsed to whichever one arrived first, silently. */
+test('a story matching several disciplines survives as one row per discipline', () => {
+  const url = 'https://example.com/multi';
+  const mk = (disciplineId: 'finance' | 'strategy' | 'corporate-finance', discipline: string) => ({
+    id: h(url), type: 'article' as const, title: 't', description: 'd', url,
+    source: 'Reuters', publishedAt: '2026-05-22T09:00:00Z',
+    discipline, disciplineId, aiRelevant: false, sponsorId: null,
+  });
+  const out = dedupeByIdAndDiscipline([
+    mk('finance', 'Finance'),
+    mk('strategy', 'Strategy'),
+    mk('corporate-finance', 'Corporate Finance'),
+  ]);
+  assert.equal(out.length, 3);
+  assert.deepEqual(out.map((i) => i.disciplineId).sort(), ['corporate-finance', 'finance', 'strategy']);
+  // Same story throughout — only the discipline differs.
+  assert.equal(new Set(out.map((i) => i.id)).size, 1);
+});
+
+test('a repeat within ONE discipline still collapses', () => {
+  const url = 'https://example.com/dup';
+  const mk = (disciplineId: 'finance' | 'strategy', publishedAt: string) => ({
+    id: h(url), type: 'article' as const, title: 't', description: 'd', url,
+    source: 'Reuters', publishedAt, discipline: 'x', disciplineId,
+    aiRelevant: false, sponsorId: null,
+  });
+  const batch = [
+    mk('finance', '2026-05-22T15:00:00Z'),
+    mk('finance', '2026-05-22T09:00:00Z'),
+    mk('strategy', '2026-05-22T15:00:00Z'),
+  ];
+  const out = dedupeByIdAndDiscipline(batch);
+  assert.equal(out.length, 2);
+  // Only the within-discipline repeat counts as a duplicate. A second
+  // discipline is a second row, and must not inflate the run report.
+  assert.equal(duplicateCount(batch), 1);
+});
+
+/* published_at and ai_relevant are facts about the URL, not about one
+   discipline's copy, so they are resolved across every copy before the
+   per-discipline rows are built. Otherwise the same headline could show two
+   dates, or badge in finance and not in strategy. */
+test('the earliest date and the AI flag apply across every discipline', () => {
+  const url = 'https://example.com/wire';
+  const mk = (disciplineId: 'finance' | 'strategy', publishedAt: string, aiRelevant: boolean) => ({
+    id: h(url), type: 'article' as const, title: 't', description: 'd', url,
+    source: 'Reuters', publishedAt, discipline: 'x', disciplineId, aiRelevant, sponsorId: null,
+  });
+  const out = dedupeByIdAndDiscipline([
+    mk('finance', '2026-05-22T15:00:00Z', false),
+    mk('strategy', '2026-05-22T09:00:00Z', true),
+  ]);
+  assert.equal(out.length, 2);
+  for (const row of out) {
+    assert.equal(row.publishedAt, '2026-05-22T09:00:00Z');
+    assert.equal(row.aiRelevant, true);
+  }
+});
+
+test('a deduped batch is safe to upsert — no (id, discipline) pair appears twice', () => {
   const mk = (u: string) => ({
     id: h(u), type: 'article' as const, title: 't', description: 'd', url: u,
     source: 'Reuters', publishedAt: '2026-05-22T09:00:00Z',
     discipline: 'Finance', disciplineId: 'finance' as const, aiRelevant: false, sponsorId: null,
   });
-  const out = dedupeById(['a', 'b', 'a', 'c', 'b', 'a'].map((x) => mk(`https://e.com/${x}`)));
-  assert.equal(new Set(out.map((i) => i.id)).size, out.length);
+  const out = dedupeByIdAndDiscipline(['a', 'b', 'a', 'c', 'b', 'a'].map((x) => mk(`https://e.com/${x}`)));
+  assert.equal(new Set(out.map((i) => `${i.id} ${i.disciplineId}`)).size, out.length);
   assert.equal(out.length, 3);
 });

@@ -8,7 +8,7 @@ import { CreditLedger, fetchNewsData } from './newsdata';
 import { fetchMarketaux } from './marketaux';
 import { fetchFeed, matchDisciplines, scrubError } from './rss';
 import { normalizeItem } from './normalize';
-import { dedupeById, duplicateCount } from './dedupe';
+import { dedupeByIdAndDiscipline, duplicateCount } from './dedupe';
 
 export interface IngestReport {
   startedAt: string;
@@ -171,7 +171,7 @@ export async function runIngest(): Promise<IngestReport> {
 
   // ── Dedupe, then write ──────────────────────────────────────────────────────
   const duplicates = duplicateCount(collected);
-  const deduped = dedupeById(collected);
+  const deduped = dedupeByIdAndDiscipline(collected);
 
   const articles = deduped.filter((i) => i.type === 'article');
   const reports = deduped.filter((i) => i.type === 'report');
@@ -196,7 +196,11 @@ export async function runIngest(): Promise<IngestReport> {
 
 /** Upserts on the primary key so a re-run updates rather than duplicating.
  *  Batched because a single statement with a few hundred rows is one round trip
- *  and well within Postgres's parameter limits. */
+ *  and well within Postgres's parameter limits.
+ *
+ *  onConflict must name BOTH key columns. The key is (id, discipline) so that
+ *  one story can cover every discipline it matched; naming `id` alone would no
+ *  longer resolve against any constraint. */
 async function upsertBatch(table: string, items: FeedItem[]): Promise<number> {
   if (items.length === 0) return 0;
   const db = supabaseAdmin();
@@ -214,7 +218,7 @@ async function upsertBatch(table: string, items: FeedItem[]): Promise<number> {
     ingested_at: i.ingestedAt ?? new Date().toISOString(),
   }));
 
-  const { error } = await db.from(table).upsert(rows, { onConflict: 'id' });
+  const { error } = await db.from(table).upsert(rows, { onConflict: 'id,discipline' });
   if (error) throw new Error(`Upsert into ${table} failed: ${error.message}`);
   return rows.length;
 }

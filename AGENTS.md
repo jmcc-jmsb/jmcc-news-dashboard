@@ -103,7 +103,9 @@ separate.
 - The 11 JDC/JDCC discipline ids. The REGISTRY is open — SMNG, FO and HM added
   22 more in src/lib/disciplines.ts — but those original eleven values are
   frozen: they key the article table, specs.json and the bookmark records.
-- The h() hashing function — it is the ingest dedupe key
+- The h() hashing function — it is the ingest dedupe key. Note the KEY is
+  (id, discipline), not id alone: one story legitimately covers every discipline
+  it matched. h() itself is unchanged and is still the first column.
 - The specs page has THREE sections: frameworks, metrics, sources.
   Overview and Glossary were cut deliberately. Do not re-add them.
 
