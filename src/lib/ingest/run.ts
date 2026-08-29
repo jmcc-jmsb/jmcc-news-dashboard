@@ -125,16 +125,35 @@ export async function runIngest(): Promise<IngestReport> {
     .eq('active', true)
     .not('feed_url', 'is', null);
 
-  for (const feed of feeds ?? []) {
-    const result = await fetchFeed(feed.name, feed.feed_url as string);
+  // Fetched concurrently. Awaiting each feed in turn put the run's worst case
+  // at (feed count × the 20s parser timeout); that was fine at one registered
+  // feed and is not at sixteen, and a daily cron that overruns the function
+  // limit leaves the dashboard stale for a day with no error to read.
+  //
+  // The NewsData and Marketaux loops above stay sequential on purpose — the
+  // credit ceiling is checked between calls, and firing them in parallel would
+  // overshoot it before the throw lands.
+  //
+  // ponytail: unbounded fan-out. Sixteen GETs to sixteen different hosts needs
+  // no scheduler; add a concurrency limit if the source list reaches ~50.
+  const results = await Promise.all(
+    (feeds ?? []).map(async (feed) => {
+      const result = await fetchFeed(feed.name, feed.feed_url as string);
 
-    await db
-      .from('news_sources')
-      .update({ last_fetched: new Date().toISOString(), last_error: result.error })
-      .eq('name', feed.name);
+      await db
+        .from('news_sources')
+        .update({ last_fetched: new Date().toISOString(), last_error: result.error })
+        .eq('name', feed.name);
 
+      return result;
+    }),
+  );
+
+  // Second pass, in registration order rather than in whichever order the
+  // network answered, so a run's report is reproducible.
+  for (const result of results) {
     if (result.error) {
-      sourceErrors.push({ name: feed.name, error: result.error });
+      sourceErrors.push({ name: result.name, error: result.error });
       continue;
     }
 
