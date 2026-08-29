@@ -121,25 +121,6 @@ export default function Dashboard() {
      The toggle itself lives in NewsView, beside Refresh: only the fetch knows
      how many articles matched, and the filter only ever affects the feed. */
 
-  // Client-side so the date is the reader's, not the build machine's.
-  const now = new Date();
-  const edition = {
-    label: String(
-      Math.ceil(
-        ((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 +
-          new Date(now.getFullYear(), 0, 1).getDay() +
-          1) /
-          7,
-      ),
-    ).padStart(2, '0'),
-    dateStr: now.toLocaleDateString('en-CA', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }),
-  };
-
   return (
     <div className="app">
       <DashboardBar
@@ -150,7 +131,6 @@ export default function Dashboard() {
         bookmarksCount={bookmarks.length}
         showSpecsTab={HAS_ANY_PUBLISHED_SPECS}
         showSponsorsTab={HAS_ANY_PUBLISHED_SPONSORS}
-        edition={edition}
       />
       <DisciplineBar
         discipline={discipline}

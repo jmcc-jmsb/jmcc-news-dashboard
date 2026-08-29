@@ -142,24 +142,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   top: 0;
   z-index: 20;
 }
-.header-meta {
-  background: var(--bg-sunken);
-  border-bottom: 1px solid var(--line);
-}
-.header-meta-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 7px var(--gutter);
-  color: var(--ink-mute);
-  font-size: 10px;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.header-meta-inner span { overflow: hidden; text-overflow: ellipsis; }
 .dash-bar-inner {
   max-width: var(--content-max);
   margin: 0 auto;
@@ -996,7 +978,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* responsive */
 @media (max-width: 700px) {
-  .header-meta { font-size: 9px; padding: 6px 16px; }
   .header-main { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
   .nav { order: 3; width: 100%; justify-content: flex-start; }
   .nav-link.active::after { bottom: -12px; }
