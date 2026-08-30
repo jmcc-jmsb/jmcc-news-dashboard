@@ -12,8 +12,8 @@ interface Props {
   bookmarksCount: number;
   /** False until at least one discipline is published (brief §3c). */
   showSpecsTab: boolean;
-  /** Rendered on the client only, so the date is the reader's own. */
-  edition: { label: string; dateStr: string };
+  /** False until at least one sponsor profile is published. */
+  showSponsorsTab: boolean;
 }
 
 export function DashboardBar({
@@ -23,20 +23,10 @@ export function DashboardBar({
   setTab,
   bookmarksCount,
   showSpecsTab,
-  edition,
+  showSponsorsTab,
 }: Props) {
   return (
     <div className="dash-bar">
-      {/* The EDITION strip is a dashboard element, not site chrome, so it stays
-          (brief §7) — repositioned below the imported Nav rather than above it. */}
-      <div className="header-meta">
-        <div className="header-meta-inner">
-          <span className="meta">
-            EDITION №{edition.label} · {edition.dateStr}
-          </span>
-          <span className="meta">JMCC INTERNAL · PUBLIC</span>
-        </div>
-      </div>
       <div className="dash-bar-inner">
         {/* The site nav was removed deliberately — this is the dashboard, not
             the website. What the nav did still carry, though, was the only
@@ -61,6 +51,15 @@ export function DashboardBar({
               aria-current={tab === 'specs' ? 'page' : undefined}
             >
               Technical Specs
+            </button>
+          )}
+          {showSponsorsTab && (
+            <button
+              className={'nav-link ' + (tab === 'sponsors' ? 'active' : '')}
+              onClick={() => setTab('sponsors')}
+              aria-current={tab === 'sponsors' ? 'page' : undefined}
+            >
+              Sponsors
             </button>
           )}
           <button

@@ -3,19 +3,18 @@
 > **Owner decision, 2026-08-20: run ingest once a day and stay on the Vercel
 > Hobby plan.** No upgrade, no external scheduler. Option 2 below.
 >
-> Sprint 2 adds this block to `vercel.json` when the routes exist:
+> **Shipped in Sprint 4.** This block is now in `vercel.json`:
 >
 > ```json
 > "crons": [
->   { "path": "/api/cron/ingest", "schedule": "0 11 * * *" },
->   { "path": "/api/cron/digest", "schedule": "0 13 * * 1" }
+>   { "path": "/api/cron/ingest", "schedule": "0 11 * * *" }
 > ]
 > ```
 >
 > `0 11 * * *` is **07:00 EDT in summer, 06:00 EST in winter** — the feed is
 > refreshed before delegates start their day in either season. It supersedes
-> brief §11's four-run schedule. The weekly digest is unchanged; weekly was
-> always within Hobby's limits.
+> brief §11's four-run schedule. Ingest is now the only cron: the weekly digest
+> that sat beside it was cut before merge (see the note below).
 >
 > **What this costs, stated plainly:** a story breaking just after the daily run
 > is invisible for up to 24 hours. That matters most during competition week.
@@ -92,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -fsS -X POST "https://news.jmccjmsb.ca/api/cron/ingest" \
+          curl -fsS -X POST "https://news.wecompete.ca/api/cron/ingest" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 ```
 
@@ -108,11 +107,16 @@ silent.
 If the 60-day rule is a concern, option 1 removes it for money and option 3
 plus a calendar reminder removes it for attention.
 
-## Note on the digest
+## Note on the removed digest
 
-`0 13 * * 1` is weekly — once per day or less — so the **digest cron is fine on
-Hobby either way.** Only ingest is affected. A workable split is to leave the
-weekly digest on Vercel cron and move only ingest to GitHub Actions.
+Brief §11 pairs ingest with a weekly digest cron, `0 13 * * 1`. **That digest was
+removed on 2026-08-29** — the owner cut the newsletter so delegates come to the
+dashboard rather than have headlines pushed at them. See "Why there is no
+newsletter" in the README.
+
+It never constrained this decision either way: `0 13 * * 1` is weekly, which is
+once per day or less, so it was always fine on Hobby. Only ingest ever hit the
+limit. Its removal frees nothing and changes none of the options below.
 
 ## Daylight time — handled, and not the way §11 suggested
 
@@ -123,13 +127,13 @@ otherwise:
 | Cron (UTC) | Summer (EDT) | Winter (EST) |
 |---|---|---|
 | `0 11 * * *` — ingest | 07:00 | 06:00 |
-| `0 13 * * 1` — digest | 09:00 | **08:00** |
 
 **Brief §11 has the direction backwards.** It warns of drift "in November" and
-says to "accept 9:00 AM winter digests". In fact 13:00 UTC is 08:00 in winter
-and 09:00 in summer — so the schedule hits the promised 8:00 AM *exactly at
-launch*, and the 9:00 AM case is a summer, off-season one. Nothing needs fixing
-for November.
+says to "accept 9:00 AM winter digests". In fact a 13:00 UTC job is 08:00 in
+winter and 09:00 in summer — so that schedule hit the promised 8:00 AM *exactly
+at launch*, and the 9:00 AM case was the summer, off-season one. Nothing needed
+fixing for November. (Moot now that the digest is gone, but the direction of the
+drift still applies to any future schedule.)
 
 **The fix §11 proposes is unavailable on Hobby.** "Compute the offset
 in-handler" normally means scheduling hourly and returning early until the local
@@ -137,12 +141,14 @@ hour matches. That requires many runs per day; Hobby permits one. If the plan
 ever changes, that option reopens.
 
 **What was done instead.** Ingest is unaffected in practice — 06:00 and 07:00
-are both before the day starts. The digest *is* user-visible, because the
-subscribe panel promises subscribers a send time. Rather than hardcode an hour
-that is wrong half the year, `digestSendLabel()` in `src/lib/format.ts` derives
-it from the cron via `Intl` and the `America/Toronto` zone, so the UI reads
-"Monday, 8:00 a.m. EST" in winter and "Monday, 9:00 a.m. EDT" in summer without
-anyone touching it. Both cases are pinned in `format.test.ts`.
+are both before the day starts, and no UI copy names the hour.
+
+The digest was the user-visible case, because its signup panel promised
+subscribers a send time. Rather than hardcode an hour that was wrong half the
+year, `digestSendLabel()` derived it from the cron via `Intl` and the
+`America/Toronto` zone. That helper went with the digest; if a future feature
+ever shows a schedule to a reader, **derive the local time from the cron the
+same way rather than writing a clock time into copy.**
 
 **If the send time must be exactly 8:00 AM year-round**, that is a real change,
 not a config tweak: it needs two cron expressions swapped twice a year, or the

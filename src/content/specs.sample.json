@@ -1,0 +1,117 @@
+{
+  "finance": {
+    "status": "published",
+    "frameworks": [
+      "Discounted cash flow (DCF) valuation",
+      "Comparable company analysis",
+      "Capital asset pricing model (CAPM)",
+      "Capital structure and WACC",
+      "Real options analysis"
+    ],
+    "metrics": [
+      "Enterprise value / EBITDA",
+      "Free cash flow to firm",
+      "Return on invested capital",
+      "Net debt / EBITDA",
+      "Interest coverage ratio"
+    ],
+    "sources": [
+      "Bank of Canada — rate announcements and Monetary Policy Report",
+      "SEDAR+ — Canadian issuer filings",
+      "Federal Reserve FOMC statements and minutes",
+      "CFA Institute — research and practice analysis"
+    ]
+  },
+  "accounting": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "tax": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "marketing": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "strategy": {
+    "status": "published",
+    "frameworks": [
+      "Porter's Five Forces",
+      "Value chain analysis",
+      "BCG growth-share matrix",
+      "Blue Ocean / value curve",
+      "Jobs to be Done"
+    ],
+    "metrics": [
+      "Market share and relative market share",
+      "Customer acquisition cost vs lifetime value",
+      "Contribution margin by segment",
+      "Revenue concentration (top 10 customers)"
+    ],
+    "sources": [
+      "McKinsey Quarterly",
+      "BCG Henderson Institute",
+      "Harvard Business Review",
+      "Statistics Canada — industry accounts"
+    ]
+  },
+  "digital-strategy": {
+    "status": "published",
+    "frameworks": [
+      "Build vs buy vs partner",
+      "Platform and network-effects analysis",
+      "Digital maturity assessment",
+      "Agentic workflow mapping",
+      "Technology adoption lifecycle"
+    ],
+    "metrics": [
+      "Monthly active users and stickiness (DAU/MAU)",
+      "Automation rate by process",
+      "Cost to serve per transaction",
+      "Time to value for a new deployment"
+    ],
+    "sources": [
+      "Gartner — Hype Cycle and Magic Quadrant summaries",
+      "MIT Sloan Management Review",
+      "a16z enterprise research",
+      "Company investor days and product keynotes"
+    ]
+  },
+  "entrepreneurship": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "hr": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "pom": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "sustainability": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  },
+  "international": {
+    "status": "draft",
+    "frameworks": [],
+    "metrics": [],
+    "sources": []
+  }
+}

@@ -65,9 +65,15 @@ create index if not exists news_articles_ai_idx
 
 
 -- ── Reports ──────────────────────────────────────────────────────────────────
--- Same shape as articles. `like ... including all` copies defaults, not null
--- constraints and indexes, but NOT the primary key or unique constraints, so
--- those are restated below.
+-- Same shape as articles. NOTE: an earlier revision of this comment claimed
+-- `like ... including all` does NOT copy the primary key or unique constraints
+-- and that they were "restated below". That is wrong on both counts — INCLUDING
+-- ALL implies INCLUDING INDEXES, which DOES create the source table's PRIMARY
+-- KEY, UNIQUE and EXCLUDE constraints on the new table, under auto-generated
+-- names (verified on postgres:16 by applying this file unmodified: it yields
+-- news_reports_pkey and news_reports_url_key). Nothing needed restating. Migration
+-- 20260829000007 re-keys both tables on (id, discipline) and drops these
+-- name-independently for exactly that reason.
 create table if not exists news_reports (like news_articles including all);
 alter table news_reports alter column type set default 'report';
 

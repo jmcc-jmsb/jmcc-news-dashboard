@@ -6,7 +6,7 @@ import type { RawItem } from './normalize';
 
 /** Identifies us to publishers rather than arriving as a bare bot. Several of
  *  the feeds in brief §10 return 403 to unidentified clients. */
-const USER_AGENT = 'JMCC-news-dashboard/1.0 (+https://news.jmccjmsb.ca)';
+const USER_AGENT = 'JMCC-news-dashboard/1.0 (+https://news.wecompete.ca)';
 
 const parser = new Parser({
   timeout: 20_000,

@@ -1,29 +1,52 @@
 // ABOUTME: Root React island — owns theme, tab, discipline, bookmarks, and case history.
 // ABOUTME: Mounted client:only, so reading localStorage and window during render is safe here.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Bookmark, DisciplineId, FeedItem, HistoryItem, Tab, Theme } from '../../lib/types';
-import { isDisciplineId } from '../../lib/disciplines';
+import { competitionOf, disciplinesIn, isDisciplineId } from '../../lib/disciplines';
+import { DEFAULT_COMPETITION, isCompetitionId } from '../../lib/competitions';
 import { HAS_ANY_PUBLISHED_SPECS } from '../../lib/specs';
+import { HAS_ANY_PUBLISHED_SPONSORS } from '../../lib/sponsors';
 import { storage } from '../../lib/storage';
 import { DashboardBar } from './DashboardBar';
+import { CompetitionBar } from './CompetitionBar';
 import { DisciplineBar } from './DisciplineBar';
 import { NewsView } from './NewsView';
 import { SavedView } from './SavedView';
 import { SpecsView } from './SpecsView';
+import { SponsorsView } from './SponsorsView';
 
 /* The prototype read window.location during render, which crashes on the
    server. This component is mounted with client:only="react" (brief §12), so
    there is no server render to crash — and no hydration mismatch from the
    localStorage initialisers below either. That directive is doing real work;
    do not swap it for client:load. */
-function readQuery(): { discipline: DisciplineId; tab: Tab; aiOnly: boolean } {
+function readQuery(): {
+  competition: string;
+  discipline: DisciplineId;
+  tab: Tab;
+  aiOnly: boolean;
+} {
   const p = new URLSearchParams(window.location.search);
   const d = p.get('discipline') ?? '';
+  const c = p.get('competition') ?? '';
   const t = p.get('tab') ?? '';
+
+  /* The discipline decides the competition, not the other way round: ids are
+     disjoint across sections, so a discipline names its section unambiguously
+     and a shared link cannot open with the two out of sync. An explicit
+     ?competition is only consulted when the discipline is missing or unknown. */
+  const discipline: DisciplineId = isDisciplineId(d) ? d : 'finance';
+  const competition = isDisciplineId(d)
+    ? (competitionOf(d) as string)
+    : isCompetitionId(c)
+      ? c
+      : DEFAULT_COMPETITION;
+
   return {
-    discipline: isDisciplineId(d) ? d : 'finance',
-    tab: t === 'specs' || t === 'saved' ? t : 'news',
+    competition,
+    discipline: isDisciplineId(d) ? discipline : (disciplinesIn(competition)[0].id as DisciplineId),
+    tab: t === 'specs' || t === 'sponsors' || t === 'saved' ? t : 'news',
     // In the URL so a filtered feed can be shared or bookmarked, the same way
     // the discipline already is.
     aiOnly: p.get('ai') === '1',
@@ -39,6 +62,7 @@ function writeQuery(next: Record<string, string | null>) {
 
 export default function Dashboard() {
   const initial = readQuery();
+  const [competition, setCompetition] = useState<string>(initial.competition);
   const [discipline, setDiscipline] = useState<DisciplineId>(initial.discipline);
   const [tab, setTab] = useState<Tab>(initial.tab);
   const [aiOnly, setAiOnly] = useState(initial.aiOnly);
@@ -54,17 +78,29 @@ export default function Dashboard() {
   useEffect(() => storage.writeHistory(history), [history]);
   useEffect(() => {
     writeQuery({
+      // Derivable from the discipline, so it stays out of the URL — one source
+      // of truth, and no way to share a link whose two halves disagree.
       discipline,
       tab: tab === 'news' ? null : tab,
       ai: aiOnly ? '1' : null,
     });
   }, [discipline, tab, aiOnly]);
 
+  /* Switching section moves to that section's first discipline. Sections share
+     no disciplines, so the current one is never valid in the new section and
+     leaving it would query a discipline the pills no longer show. */
+  const changeCompetition = useCallback((next: string) => {
+    setCompetition(next);
+    setDiscipline(disciplinesIn(next)[0].id as DisciplineId);
+    if (tab === 'saved') setTab('news');
+  }, [tab]);
+
   /* With zero disciplines published the Technical Specs tab does not exist
      (brief §3c). A stale ?tab=specs URL would otherwise strand a reader on a
      tab with no way back, so it falls through to the feed. */
   useEffect(() => {
     if (tab === 'specs' && !HAS_ANY_PUBLISHED_SPECS) setTab('news');
+    if (tab === 'sponsors' && !HAS_ANY_PUBLISHED_SPONSORS) setTab('news');
   }, [tab]);
 
   const isBookmarked = useCallback(
@@ -110,38 +146,13 @@ export default function Dashboard() {
     setHistory((curr) => curr.map((h) => (h.id === id ? { ...h, ...fields } : h)));
   }, []);
 
-  /* Filtering now happens in the database, not here: /api/news takes ?ai=1 and
+  /* Filtering happens in the database, not here: /api/news takes ?ai=1 and
      adds `where ai_relevant`. It is still a FILTER and not a sort — §3f's
      default is badge-don't-reorder, so the read query keeps published_at desc
      as the ordering in every case.
 
-     The count for the pill comes back up from NewsView, because only the fetch
-     knows how many matched. While the unfiltered feed is loaded we can count it
-     directly; once the filter is on, every loaded row matches by definition. */
-  const [loadedArticles, setLoadedArticles] = useState<FeedItem[]>([]);
-  const aiCount = useMemo(
-    () => (aiOnly ? loadedArticles.length : loadedArticles.filter((a) => a.aiRelevant).length),
-    [loadedArticles, aiOnly],
-  );
-
-  // Client-side so the date is the reader's, not the build machine's.
-  const now = new Date();
-  const edition = {
-    label: String(
-      Math.ceil(
-        ((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 +
-          new Date(now.getFullYear(), 0, 1).getDay() +
-          1) /
-          7,
-      ),
-    ).padStart(2, '0'),
-    dateStr: now.toLocaleDateString('en-CA', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }),
-  };
+     The toggle itself lives in NewsView, beside Refresh: only the fetch knows
+     how many articles matched, and the filter only ever affects the feed. */
 
   return (
     <div className="app">
@@ -152,31 +163,43 @@ export default function Dashboard() {
         setTab={setTab}
         bookmarksCount={bookmarks.length}
         showSpecsTab={HAS_ANY_PUBLISHED_SPECS}
-        edition={edition}
+        showSponsorsTab={HAS_ANY_PUBLISHED_SPONSORS}
       />
-      <DisciplineBar
-        discipline={discipline}
-        setDiscipline={(d) => {
-          setDiscipline(d);
-          if (tab === 'saved') setTab('news');
-        }}
-        disabled={tab === 'saved'}
-        aiOnly={aiOnly}
-        setAiOnly={setAiOnly}
-        aiCount={aiCount}
-      />
+      {/* Both bars are absent on Sponsors, not greyed out: sponsor profiles
+          are not scoped to a competition or a discipline, so a disabled filter
+          there is a control that could never have applied. Saved keeps its
+          disabled bars — saved items ARE per-discipline, so the filter is
+          meaningful, just not live. */}
+      {tab !== 'sponsors' && (
+        <>
+          <CompetitionBar
+            competition={competition}
+            setCompetition={changeCompetition}
+            disabled={tab === 'saved'}
+          />
+          <DisciplineBar
+            discipline={discipline}
+            setDiscipline={(d) => {
+              setDiscipline(d);
+              if (tab === 'saved') setTab('news');
+            }}
+            competition={competition}
+            disabled={tab === 'saved'}
+          />
+        </>
+      )}
       <main className="main">
         {tab === 'news' && (
           <NewsView
             discipline={discipline}
             aiOnly={aiOnly}
-            clearAiFilter={() => setAiOnly(false)}
+            setAiOnly={setAiOnly}
             isBookmarked={isBookmarked}
             toggleBookmark={toggleBookmark}
-            onArticlesChange={setLoadedArticles}
           />
         )}
         {tab === 'specs' && <SpecsView discipline={discipline} />}
+        {tab === 'sponsors' && <SponsorsView />}
         {tab === 'saved' && (
           <SavedView
             bookmarks={bookmarks}

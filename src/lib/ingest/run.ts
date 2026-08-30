@@ -8,7 +8,7 @@ import { CreditLedger, fetchNewsData } from './newsdata';
 import { fetchMarketaux } from './marketaux';
 import { fetchFeed, matchDisciplines, scrubError } from './rss';
 import { normalizeItem } from './normalize';
-import { dedupeById, duplicateCount } from './dedupe';
+import { dedupeByIdAndDiscipline, duplicateCount } from './dedupe';
 
 export interface IngestReport {
   startedAt: string;
@@ -125,16 +125,35 @@ export async function runIngest(): Promise<IngestReport> {
     .eq('active', true)
     .not('feed_url', 'is', null);
 
-  for (const feed of feeds ?? []) {
-    const result = await fetchFeed(feed.name, feed.feed_url as string);
+  // Fetched concurrently. Awaiting each feed in turn put the run's worst case
+  // at (feed count × the 20s parser timeout); that was fine at one registered
+  // feed and is not at sixteen, and a daily cron that overruns the function
+  // limit leaves the dashboard stale for a day with no error to read.
+  //
+  // The NewsData and Marketaux loops above stay sequential on purpose — the
+  // credit ceiling is checked between calls, and firing them in parallel would
+  // overshoot it before the throw lands.
+  //
+  // ponytail: unbounded fan-out. Sixteen GETs to sixteen different hosts needs
+  // no scheduler; add a concurrency limit if the source list reaches ~50.
+  const results = await Promise.all(
+    (feeds ?? []).map(async (feed) => {
+      const result = await fetchFeed(feed.name, feed.feed_url as string);
 
-    await db
-      .from('news_sources')
-      .update({ last_fetched: new Date().toISOString(), last_error: result.error })
-      .eq('name', feed.name);
+      await db
+        .from('news_sources')
+        .update({ last_fetched: new Date().toISOString(), last_error: result.error })
+        .eq('name', feed.name);
 
+      return result;
+    }),
+  );
+
+  // Second pass, in registration order rather than in whichever order the
+  // network answered, so a run's report is reproducible.
+  for (const result of results) {
     if (result.error) {
-      sourceErrors.push({ name: feed.name, error: result.error });
+      sourceErrors.push({ name: result.name, error: result.error });
       continue;
     }
 
@@ -152,7 +171,7 @@ export async function runIngest(): Promise<IngestReport> {
 
   // ── Dedupe, then write ──────────────────────────────────────────────────────
   const duplicates = duplicateCount(collected);
-  const deduped = dedupeById(collected);
+  const deduped = dedupeByIdAndDiscipline(collected);
 
   const articles = deduped.filter((i) => i.type === 'article');
   const reports = deduped.filter((i) => i.type === 'report');
@@ -177,7 +196,11 @@ export async function runIngest(): Promise<IngestReport> {
 
 /** Upserts on the primary key so a re-run updates rather than duplicating.
  *  Batched because a single statement with a few hundred rows is one round trip
- *  and well within Postgres's parameter limits. */
+ *  and well within Postgres's parameter limits.
+ *
+ *  onConflict must name BOTH key columns. The key is (id, discipline) so that
+ *  one story can cover every discipline it matched; naming `id` alone would no
+ *  longer resolve against any constraint. */
 async function upsertBatch(table: string, items: FeedItem[]): Promise<number> {
   if (items.length === 0) return 0;
   const db = supabaseAdmin();
@@ -195,7 +218,7 @@ async function upsertBatch(table: string, items: FeedItem[]): Promise<number> {
     ingested_at: i.ingestedAt ?? new Date().toISOString(),
   }));
 
-  const { error } = await db.from(table).upsert(rows, { onConflict: 'id' });
+  const { error } = await db.from(table).upsert(rows, { onConflict: 'id,discipline' });
   if (error) throw new Error(`Upsert into ${table} failed: ${error.message}`);
   return rows.length;
 }

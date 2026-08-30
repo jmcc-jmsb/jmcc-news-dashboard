@@ -35,15 +35,57 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 ## Technical Specs content
 - src/content/specs.json is CONTENT, not code. Never edit its values to make
   a test pass or to fill a gap. The owner supplies the real content.
+- src/content/specs.sample.json is DEMO content — generic textbook frameworks
+  for three disciplines, behind PUBLIC_USE_FIXTURES, banner-ed on screen. It
+  exists so the tab can be recorded and tested before the coaches deliver.
+  **Never copy it into specs.json.** It is not coach material.
 - Every discipline has a status: draft | review | published.
   Only "published" renders. draft/review show an in-development empty state.
 - Never render placeholder bullets. An empty section is correct and expected.
 - If no discipline is published, the Technical Specs tab hides itself.
 
 ## Sponsor tracking
-- Sponsors are competition-scoped and ship empty until the owner adds real
-  ones. Never fabricate sponsor data. The Sponsor Watch section hides itself
+There are TWO sponsor surfaces and they read from different places. Keep them
+separate.
+
+- **Sponsor Watch** (rail, on the News Feed) tags ingested articles to a
+  sponsor. Data: `news_sponsors` in Supabase, via `/api/sponsors`. Hides itself
   when there are zero active sponsors — don't render an empty rail.
+- **Sponsor Tracker** (its own tab) is the company-profile dashboard —
+  financials, goals, values. Data: `src/content/sponsors.json`, validated by
+  `lib/sponsors.ts` at build time. Same status pattern as specs.json: only
+  `published` renders, and the tab hides itself when none are.
+
+- **Never fabricate sponsor data.** Every metric needs a real `source` URL and
+  every profile an `asOf` date. Sample profiles live in
+  `src/content/sponsors.sample.json`, are gated behind `PUBLIC_USE_FIXTURES`,
+  use `example.com` for every source, and banner themselves on screen.
+- draft/review sponsors are counted but NEVER named on screen — an unannounced
+  sponsor is confidential.
+- A founding year is not a metric; it has its own `founded` field. Everything in
+  `metrics` is a magnitude, so every bar can be drawn honestly from zero.
+- Comparison charts are derived, not configured: a metric charts when two or
+  more published sponsors share a label AND a unit. Never chart the same label
+  across two units — the taller bar would be a lie.
+- Owner-facing guide: docs/EDITING_SPONSORS.md.
+
+## Competitions
+- Four sections: JDC/JDCC (one section, two events), SMNG, FO, HM. Content is
+  src/content/competitions.json, derived from jmcc-website's competitions.json.
+- **Every discipline belongs to exactly ONE competition.** The 33 ids are
+  disjoint, because the source registry already distinguishes each
+  competition's variant by slug (tax vs taxation, accounting vs
+  financial-accounting, marketing vs strategic-marketing).
+- That disjointness is load-bearing. It is why `competition` is DERIVED from
+  the discipline rather than stored on every article — no competition column,
+  no composite key, no migration. **Do not introduce a discipline id that
+  appears in two sections**; it would break the derivation, the URL contract,
+  and `labelFor()` all at once.
+- The URL carries `?discipline` only. The competition follows from it, so a
+  shared link cannot open with the two halves disagreeing.
+- Event formats and involvement events get no news: social, participation,
+  sports, quiz, surprise, debate, 24-hour-interactive. The original eleven
+  already excluded JDC's formats; the same rule was applied to the other three.
 
 ## Topic tuning
 - news_discipline_topics is a shared Supabase table, potentially also written to
@@ -58,8 +100,12 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 ## Do not change
 - localStorage keys: jmcc_theme, jmcc_bookmarks, jmcc_case_history
 - The bookmark object shape — it maps 1:1 onto the Supabase schema
-- The 11 discipline ids
-- The h() hashing function — it is the ingest dedupe key
+- The 11 JDC/JDCC discipline ids. The REGISTRY is open — SMNG, FO and HM added
+  22 more in src/lib/disciplines.ts — but those original eleven values are
+  frozen: they key the article table, specs.json and the bookmark records.
+- The h() hashing function — it is the ingest dedupe key. Note the KEY is
+  (id, discipline), not id alone: one story legitimately covers every discipline
+  it matched. h() itself is unchanged and is still the first column.
 - The specs page has THREE sections: frameworks, metrics, sources.
   Overview and Glossary were cut deliberately. Do not re-add them.
 
@@ -70,18 +116,26 @@ for data. Companion to `jmcc-website` (static, cPanel) and `jmcc-portal`
 - Adding a second daily run does not degrade gracefully — Vercel **rejects the
   deploy outright**. Do not "fix" a stale feed by adding runs.
 - Budget the credit spend against one run, not four (brief §10 assumed four).
-- The weekly digest, `0 13 * * 1`, is unaffected — weekly is within the limit.
-- Reasoning and the alternatives are in docs/CRON_OPTIONS.md.
+- Ingest is now the ONLY cron. Reasoning and the alternatives are in
+  docs/CRON_OPTIONS.md.
 
 ## Daylight time
-- Vercel cron is UTC-only. `0 11 * * *` = 07:00 EDT / 06:00 EST; the weekly
-  digest `0 13 * * 1` = 09:00 EDT / 08:00 EST. Brief §11 states this drift
-  backwards — the schedule hits 8:00 AM in winter, which is launch season.
-- **Never hardcode a local send time in UI or email copy.** Call
-  `digestSendLabel()` from lib/format.ts; it derives the local time from the
-  cron via Intl, so it stays true across both offsets. Tests pin both.
+- Vercel cron is UTC-only, so a fixed UTC schedule drifts an hour locally:
+  `0 11 * * *` = 07:00 EDT / 06:00 EST. Ingest is not user-visible, so the
+  drift is harmless — but never write a local clock time into UI copy on the
+  assumption a cron fires at it.
 - The usual "schedule hourly and no-op" DST fix needs many runs per day and is
   therefore impossible on Hobby. Don't reach for it without a plan change.
+
+## No newsletter — deliberately
+- The weekly email digest was built in Sprint 4 and REMOVED before merge, on the
+  owner's call. Delegates are meant to come to the dashboard rather than have
+  headlines pushed at them; the push channel returns later as a weekly
+  AI-generated podcast, which is a different pipeline entirely.
+- Do not re-add a subscribe form, a subscriber table, an email dependency, or a
+  second cron in service of "bringing back the digest". If the podcast needs
+  distribution, that is its own design conversation.
+- README "Why there is no newsletter" lists everything that was removed.
 
 ## Ingest sources
 - **The RSS feed list is DATA, in `news_sources` — never a code constant.** All
@@ -117,8 +171,8 @@ first and owns `competitions`, `disciplines`, `profiles`, `teams`, and the
 `team_*` membership tables.
 
 - **Every table this repo creates is prefixed `news_`.** `news_articles`,
-  `news_reports`, `news_sources`, `news_sponsors`, `news_digest_subscribers`,
-  `news_discipline_topics`. The prefix is uniform, including on tables that do
+  `news_reports`, `news_sources`, `news_sponsors`, `news_discipline_topics`.
+  The prefix is uniform, including on tables that do
   not collide today — a rule with remembered exceptions is worse than one that
   is always true.
 - **Never alter a Portal table, its columns, or its RLS policies.** The Portal's

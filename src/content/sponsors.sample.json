@@ -1,0 +1,109 @@
+{
+  "northwind": {
+    "status": "published",
+    "name": "Northwind Advisory",
+    "legalName": "Northwind Advisory Group Inc.",
+    "sector": "Management consulting",
+    "hq": "Toronto, ON",
+    "founded": 1988,
+    "website": "https://example.com/northwind",
+    "competitions": ["Competition 1 — November 2026"],
+    "asOf": "2026-08-29",
+    "summary": "Invented sample sponsor. Mid-market strategy and operations consultancy used here to exercise the layout — every figure below is made up and every source points at example.com.",
+    "metrics": [
+      { "label": "Revenue", "value": 4.1, "unit": "B CAD", "source": "https://example.com/northwind/annual-report" },
+      { "label": "Headcount", "value": 12400, "source": "https://example.com/northwind/careers" },
+      { "label": "Offices", "value": 31, "source": "https://example.com/northwind/locations" }
+    ],
+    "goals": [
+      "Double the public-sector advisory practice by 2029",
+      "Move 60% of delivery to outcome-based pricing",
+      "Reach net zero across owned operations by 2030"
+    ],
+    "values": [
+      "Client outcomes over billable hours",
+      "Publish the method, not just the answer",
+      "Hire for judgement, train for technique"
+    ],
+    "sources": [
+      "https://example.com/northwind/annual-report",
+      "https://example.com/northwind/newsroom"
+    ]
+  },
+  "meridian": {
+    "status": "published",
+    "name": "Meridian Capital Partners",
+    "legalName": "Meridian Capital Partners LP",
+    "sector": "Asset management",
+    "hq": "Montreal, QC",
+    "founded": 2004,
+    "website": "https://example.com/meridian",
+    "competitions": ["Competition 1 — November 2026"],
+    "asOf": "2026-08-29",
+    "summary": "Invented sample sponsor. Stands in for a mid-size asset manager so the comparison charts have more than one bar; none of these numbers describe a real firm.",
+    "metrics": [
+      { "label": "Revenue", "value": 0.89, "unit": "B CAD", "source": "https://example.com/meridian/investors" },
+      { "label": "Headcount", "value": 2100, "source": "https://example.com/meridian/team" },
+      { "label": "Offices", "value": 7, "source": "https://example.com/meridian/contact" }
+    ],
+    "goals": [
+      "Grow assets under management past $40B by 2028",
+      "Launch a Quebec-focused infrastructure fund",
+      "Bring ESG screening to the full public-equity book"
+    ],
+    "values": [
+      "Long horizons beat quarterly noise",
+      "Say what the fee actually is",
+      "Local capital, local accountability"
+    ],
+    "sources": [
+      "https://example.com/meridian/investors",
+      "https://example.com/meridian/press"
+    ]
+  },
+  "altus": {
+    "status": "published",
+    "name": "Altus Logistics",
+    "legalName": "Altus Logistics Group Ltd.",
+    "sector": "Transportation & logistics",
+    "hq": "Calgary, AB",
+    "founded": 1996,
+    "website": "https://example.com/altus",
+    "competitions": ["Competition 1 — November 2026"],
+    "asOf": "2026-08-29",
+    "summary": "Invented sample sponsor. A logistics operator included to show a third sector on the overview; treat every figure as placeholder.",
+    "metrics": [
+      { "label": "Revenue", "value": 2.4, "unit": "B CAD", "source": "https://example.com/altus/results" },
+      { "label": "Headcount", "value": 8800, "source": "https://example.com/altus/careers" },
+      { "label": "Offices", "value": 19, "source": "https://example.com/altus/network" }
+    ],
+    "goals": [
+      "Electrify 40% of the short-haul fleet by 2030",
+      "Cut average dock-to-door time by a full day",
+      "Open two western intermodal hubs"
+    ],
+    "values": [
+      "The load arrives when we said it would",
+      "Safety numbers are published, not managed",
+      "Drivers are staff, not contractors"
+    ],
+    "sources": [
+      "https://example.com/altus/results",
+      "https://example.com/altus/newsroom"
+    ]
+  },
+  "kestrel": {
+    "status": "draft",
+    "name": "Kestrel Health Systems",
+    "sector": "Healthcare technology",
+    "hq": "Ottawa, ON",
+    "website": "https://example.com/kestrel",
+    "competitions": ["Competition 2 — February 2027"],
+    "asOf": "2026-08-29",
+    "summary": "Invented sample sponsor left in draft on purpose, so the in-development state is visible in the demo alongside published profiles.",
+    "metrics": [],
+    "goals": [],
+    "values": [],
+    "sources": []
+  }
+}

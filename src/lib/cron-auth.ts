@@ -10,7 +10,7 @@ import { CRON_SECRET } from 'astro:env/server';
  *
  * What an unguarded /api/cron/ingest would let a stranger do: burn the entire
  * NewsData daily quota in a few seconds by looping the endpoint, which empties
- * the feed for the rest of the day. On /api/cron/digest it would send real
+ * the feed for the rest of the day. On a send-mail cron it would deliver real
  * email to real subscribers.
  */
 export function isAuthorizedCron(request: Request): boolean {

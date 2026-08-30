@@ -9,14 +9,21 @@ import tailwindcss from '@tailwindcss/vite';
 // The canonical host. Every absolute URL derives from it — never hardcode a
 // hostname in a component or page.
 //
-// ⚠ OPEN ITEM: brief §14 specifies news.jmccjmsb.ca, but jmcc-website's config
-// says "wecompete.ca is primary; jmccjmsb.ca is legacy and 301s here", while
-// jmcc-portal uses portal.jmccjmsb.ca. The three repos disagree. Using the
-// brief's value until the owner confirms; this is a one-line change either way.
+// DECIDED, 2026-08-23: news.wecompete.ca. Brief §14 said news.jmccjmsb.ca, but
+// jmccjmsb.ca is legacy-redirect-only — jmcc-website 301s it to wecompete.ca
+// preserving the path, so the brief's host would have made every canonical URL
+// here a redirect target. Same apex as the main site, which is also why the
+// footer and nav links in i18n/utils.ts resolve cleanly.
+//
+// The dashboard stays PUBLIC and ANONYMOUS. It is a separate deployment from
+// jmcc-portal and shares no session with it; the subdomain is where it lives,
+// not a way into the Portal.
+//
+// Needs a CNAME on `news` that CASA IT owns — see the Domain section in README.
 export default defineConfig({
-  site: 'https://news.jmccjmsb.ca',
+  site: 'https://news.wecompete.ca',
 
-  // Server output, because the ingest and digest crons in vercel.json need a
+  // Server output, because the ingest cron in vercel.json needs a
   // runtime and cPanel cannot give them one (brief §1). The dashboard page
   // itself opts back into prerendering — it is a static shell around a
   // client:only island, so there is nothing for the server to render per-request.
@@ -36,7 +43,6 @@ export default defineConfig({
      The consumers fail loudly at runtime instead. */
   env: {
     schema: {
-      PUBLIC_SITE_URL: envField.string({ context: 'client', access: 'public', optional: true }),
       PUBLIC_SUPABASE_URL: envField.string({ context: 'client', access: 'public', optional: true }),
       PUBLIC_SUPABASE_PUBLISHABLE_KEY: envField.string({ context: 'client', access: 'public', optional: true }),
 
@@ -54,7 +60,6 @@ export default defineConfig({
       SUPABASE_SECRET_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       NEWSDATA_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       MARKETAUX_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
-      RESEND_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       CRON_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
