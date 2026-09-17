@@ -29,6 +29,17 @@ export const GET: APIRoute = async ({ request }) => {
     // what someone reads at 8am when the feed looks wrong.
     console.log('[ingest]', JSON.stringify(report));
 
+    // A run that saved nothing is a failure whatever the reason: a healthy run
+    // re-upserts everything it fetched, so 0 rows means no source delivered and
+    // the feed got no update. 500, with the report attached so the cause is readable.
+    if (report.upserted === 0) {
+      console.error('[ingest] run saved nothing');
+      return new Response(JSON.stringify(report, null, 2), {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
     // 207 when some sources failed but the run still wrote rows: a green 200
     // would hide a dead feed, and a red 500 would imply nothing was ingested.
     const status = report.sourceErrors.length > 0 && report.upserted > 0 ? 207 : 200;

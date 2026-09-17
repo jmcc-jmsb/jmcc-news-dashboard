@@ -4,7 +4,7 @@
 import { DISCIPLINES, isDisciplineId, labelFor } from '../disciplines';
 import type { DisciplineId, FeedItem } from '../types';
 import { supabaseAdmin } from '../supabase/admin';
-import { CreditLedger, fetchNewsData } from './newsdata';
+import { CreditCeilingError, CreditLedger, NewsDataQuotaError, fetchNewsData } from './newsdata';
 import { fetchMarketaux } from './marketaux';
 import { fetchFeed, matchDisciplines, scrubError } from './rss';
 import { normalizeItem } from './normalize';
@@ -14,6 +14,8 @@ export interface IngestReport {
   startedAt: string;
   finishedAt: string;
   creditsUsed: number;
+  /** NewsData queries not attempted because credits ran out mid-run. */
+  newsDataSkipped: number;
   fetched: number;
   duplicates: number;
   rejected: number;
@@ -33,9 +35,11 @@ interface TopicRow {
  * the whole dashboard stale for a full day (we ingest once daily — see
  * docs/CRON_OPTIONS.md).
  *
- * The one exception is the credit ceiling, which throws deliberately. Spending
- * past it empties the feed for the rest of the day, so stopping early with a
- * loud error is strictly better than continuing.
+ * Running out of NewsData credits is the same rule, applied to one source.
+ * Reaching our own ceiling or NewsData's 429 stops every remaining NewsData
+ * query, since each further call would fail or overspend. Marketaux, RSS and
+ * the write still happen, and the skip is reported as one source error, so a
+ * run that still wrote rows answers 207 rather than a quiet 200.
  */
 export async function runIngest(): Promise<IngestReport> {
   const startedAt = new Date().toISOString();
@@ -44,6 +48,10 @@ export async function runIngest(): Promise<IngestReport> {
   const sourceErrors: { name: string; error: string }[] = [];
   const collected: FeedItem[] = [];
   let rejected = 0;
+
+  // Set once credits run out; every later NewsData query is counted, not sent.
+  let creditsExhausted: string | null = null;
+  let newsDataSkipped = 0;
 
   // ── Keywords come from the database, not from a code constant (brief §3e) ──
   const { data: topicRows, error: topicErr } = await db
@@ -66,6 +74,10 @@ export async function runIngest(): Promise<IngestReport> {
 
   // ── NewsData: one query per discipline ──────────────────────────────────────
   for (const topic of topics) {
+    if (creditsExhausted) {
+      newsDataSkipped++;
+      continue;
+    }
     const query = topic.keywords.slice(0, 5).join(' OR ');
     try {
       const raw = await fetchNewsData(query, ledger);
@@ -75,9 +87,13 @@ export async function runIngest(): Promise<IngestReport> {
         else rejected++;
       }
     } catch (err) {
-      // A credit-ceiling breach must stop the run, not be swallowed as one
-      // more source error.
-      if (err instanceof Error && err.message.includes('credit ceiling')) throw err;
+      // Out of credits is not one more per-discipline error: it ends NewsData
+      // for this run, and the failed query counts as skipped.
+      if (err instanceof CreditCeilingError || err instanceof NewsDataQuotaError) {
+        creditsExhausted = scrubError(err);
+        newsDataSkipped++;
+        continue;
+      }
       sourceErrors.push({ name: `NewsData:${topic.discipline}`, error: scrubError(err) });
     }
   }
@@ -90,6 +106,10 @@ export async function runIngest(): Promise<IngestReport> {
     .eq('active', true);
 
   for (const sponsor of sponsors ?? []) {
+    if (creditsExhausted) {
+      newsDataSkipped++;
+      continue;
+    }
     const terms = [sponsor.name, ...(sponsor.keywords ?? [])].filter(Boolean);
     try {
       const raw = await fetchNewsData(terms.join(' OR '), ledger);
@@ -101,9 +121,20 @@ export async function runIngest(): Promise<IngestReport> {
         else rejected++;
       }
     } catch (err) {
-      if (err instanceof Error && err.message.includes('credit ceiling')) throw err;
+      if (err instanceof CreditCeilingError || err instanceof NewsDataQuotaError) {
+        creditsExhausted = scrubError(err);
+        newsDataSkipped++;
+        continue;
+      }
       sourceErrors.push({ name: `Sponsor:${sponsor.name}`, error: scrubError(err) });
     }
+  }
+
+  if (creditsExhausted) {
+    sourceErrors.push({
+      name: 'NewsData',
+      error: `${creditsExhausted} (${newsDataSkipped} queries skipped)`,
+    });
   }
 
   // ── Marketaux: finance only ─────────────────────────────────────────────────
@@ -183,6 +214,7 @@ export async function runIngest(): Promise<IngestReport> {
     startedAt,
     finishedAt: new Date().toISOString(),
     creditsUsed: ledger.used,
+    newsDataSkipped,
     fetched: collected.length,
     duplicates,
     rejected,

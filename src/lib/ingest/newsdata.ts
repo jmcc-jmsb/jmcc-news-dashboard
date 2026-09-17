@@ -26,6 +26,17 @@ const ENDPOINT = 'https://newsdata.io/api/1/latest';
  */
 export const DAILY_CREDIT_CEILING = 150;
 
+/** Our own ceiling was reached. No credit was spent on the refused query. */
+export class CreditCeilingError extends Error {
+  override name = 'CreditCeilingError';
+}
+
+/** NewsData answered 429: the real daily quota is gone, whatever our ledger says.
+ *  The ledger only counts one run, so a manual re-run on the same day can get here. */
+export class NewsDataQuotaError extends Error {
+  override name = 'NewsDataQuotaError';
+}
+
 export class CreditLedger {
   private spent = 0;
   constructor(private readonly ceiling = DAILY_CREDIT_CEILING) {}
@@ -34,12 +45,13 @@ export class CreditLedger {
     return this.spent;
   }
 
-  /** Throws rather than degrading. Failing loudly is the requirement (brief §10). */
+  /** Throws rather than overspending. runIngest catches this and stops querying
+   *  NewsData, but keeps the rest of the run and reports the skip loudly. */
   charge(credits = 1): void {
     if (this.spent + credits > this.ceiling) {
-      throw new Error(
+      throw new CreditCeilingError(
         `NewsData credit ceiling reached: ${this.spent}/${this.ceiling} used, ` +
-          `refusing to spend ${credits} more. Ingest stopped to protect the daily quota.`,
+          `refusing to spend ${credits} more. NewsData queries stopped to protect the daily quota.`,
       );
     }
     this.spent += credits;
@@ -71,8 +83,11 @@ export async function fetchNewsData(
   url.searchParams.set('language', 'en');
 
   const res = await fetch(url, { signal });
+  if (res.status === 429) {
+    throw new NewsDataQuotaError(`NewsData 429 for query "${query}": daily quota exhausted`);
+  }
   if (!res.ok) {
-    // 429 means the quota is gone; anything else is worth surfacing verbatim.
+    // Anything other than a 429 is worth surfacing verbatim.
     throw new Error(`NewsData ${res.status} for query "${query}"`);
   }
 
