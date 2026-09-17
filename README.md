@@ -27,9 +27,9 @@ npm run dev
 
 Node >= 22.12 required.
 
-## Current state — Sprints 0 through 4 complete
+## Current state — Sprints 0 through 5 complete
 
-The re-skinned prototype is ported to typed React and renders on fixture data.
+The re-skinned prototype is ported to typed React and reads the feed from the API.
 
 - ✅ Astro 7 scaffold, Vercel adapter, Tailwind 4, both `@fontsource` faces
 - ✅ Brand files copied from `jmcc-website` (see *Brand files* below); site nav deliberately removed
@@ -46,7 +46,9 @@ The re-skinned prototype is ported to typed React and renders on fixture data.
 - ❌ Weekly email digest — built in Sprint 4, then **cut before merge**. See
   "Why there is no newsletter" below.
 - ✅ Sponsor Tracker — a per-sponsor profile dashboard (financials, goals,
-  values) on its own tab, driven by `src/content/sponsors.json`
+  values) on its own tab, driven by `src/content/sponsors.json` — Sprint 5
+- ✅ Four competition sections (JDC/JDCC, SMNG, FO, HM), 33 disciplines, and
+  articles keyed on `(id, discipline)` so one story can cover several — Sprint 5
 - ⬜ Applying migrations and a real ingest run — blocked on credentials
 - ⬜ Real sponsor profiles — blocked on sponsorship closing
 
@@ -68,10 +70,10 @@ redirect target.
 shares no session with `jmcc-portal`, and requires no sign-in. The subdomain is
 where it lives, not a door into the Portal.
 
-> **Blocked on CASA IT.** `news` needs a CNAME to the project-specific target
-> Vercel shows under Settings → Domains — not the generic one. DNS for
-> `wecompete.ca` is owned by CASA IT (Ryan), same as the main site; see
-> `MAINTENANCE.md` in `jmcc-website`. Nothing resolves until that record exists.
+> **Not live yet: the DNS record does not exist.** `news` needs a CNAME to the
+> project-specific target Vercel shows under Settings → Domains — not the generic
+> one. The owner adds it directly in the cPanel Zone Editor for `wecompete.ca`;
+> no CASA IT ticket is needed. Nothing resolves until that record exists.
 
 ## Architecture notes
 
