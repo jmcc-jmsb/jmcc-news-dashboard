@@ -182,6 +182,7 @@ and banner-ed on screen. **Never set it in Production.**
 ## Documentation
 
 - `AGENTS.md` (symlinked as `CLAUDE.md`) — conventions and hard rules
+- `docs/GOING_LIVE.md` — what is done, and the steps left to a live feed
 - `docs/EDITING_SPECS.md` — how a non-developer edits Technical Specs content
 - `docs/EDITING_SPONSORS.md` — how a non-developer edits Sponsor Tracker content
 - `docs/CRON_OPTIONS.md` — why ingest runs once a day, and how to change it
