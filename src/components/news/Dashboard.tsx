@@ -60,7 +60,14 @@ function writeQuery(next: Record<string, string | null>) {
   window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
 }
 
-export default function Dashboard() {
+interface Props {
+  /** Built URL of the JMCC shield. Passed in rather than imported so the
+      optimised asset is chosen by the host page — the Portal copy of this
+      island hands over its own. */
+  logoSrc: string;
+}
+
+export default function Dashboard({ logoSrc }: Props) {
   const initial = readQuery();
   const [competition, setCompetition] = useState<string>(initial.competition);
   const [discipline, setDiscipline] = useState<DisciplineId>(initial.discipline);
@@ -157,6 +164,7 @@ export default function Dashboard() {
   return (
     <div className="app">
       <DashboardBar
+        logoSrc={logoSrc}
         theme={theme}
         setTheme={setTheme}
         tab={tab}

@@ -140,8 +140,15 @@ differences from the website original. Keep that delta small so the re-copy
 stays mechanical.
 
 The website's `Nav.astro` was copied in during Sprint 0 and then removed on the
-owner's call — the dashboard is not the website. `data/site.json` and the colour
-shield went with it, since Nav was their only consumer.
+owner's call — the dashboard is not the website. `data/site.json` went with it,
+since Nav was its only consumer.
+
+The colour shield came back in Sprint 6, as the brand mark in the dashboard
+bar's `.dash-brand` link — not as a nav. That link goes to `/`, the dashboard's
+own home; the Footer is what routes back to wecompete.ca. The favicon
+(`src/assets/brand/favicon.png`, imported by `BaseLayout.astro` so its URL is
+fingerprinted) and `public/apple-touch-icon.png` are the same icons the website
+serves — two more files for the hand-copy list above.
 
 ## Two sponsor surfaces, two data sources
 

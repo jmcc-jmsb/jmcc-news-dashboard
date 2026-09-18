@@ -202,11 +202,20 @@ Write components so that copy stays cheap: keep persistence behind
 ## No site nav — this is not the website
 The website's `Nav.astro` was copied in and then **deliberately removed**: the
 dashboard is its own product, not a page of wecompete.ca. Do not reinstate it.
-`data/site.json` and `jmcc-shield-color.png` were deleted with it — Nav was
-their only consumer.
+`data/site.json` was deleted with it — Nav was its only consumer.
 
-Identity and the one route back to the main site are carried by the `.dash-brand`
-wordmark in `DashboardBar.tsx`. The shared `Footer.astro` stays.
+Identity is carried by the `.dash-brand` mark in `DashboardBar.tsx`: the
+website's `jmcc-shield-color.png` plus the wordmark. It links to `/`, the
+dashboard's own home — a brand mark top-left reads as "home", and here home is
+this dashboard. The route back to wecompete.ca is the shared `Footer.astro`,
+which stays and links out in full; don't move that job back onto the wordmark.
+
+`jmcc-shield-color.png` is optimised by `getImage()` in `pages/index.astro` and
+passed to the island as `logoSrc`. Importing it inside a `.tsx` instead ships
+the 1627px master untouched — Astro only optimises what `astro:assets` is asked
+for. The favicon is `assets/brand/favicon.png`, imported by `BaseLayout.astro`
+so the emitted URL is fingerprinted; `public/apple-touch-icon.png` is the one
+icon served unhashed. All three are jmcc-website's files, unmodified.
 
 ## Brand files are copied, not shared
 `global.css`, `Footer.astro`, `SocialIcon.astro`, `i18n/`, `data/contact.json`,

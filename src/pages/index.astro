@@ -1,9 +1,21 @@
 ---
 // ABOUTME: The dashboard page — the React island plus the shared Footer. No site nav.
 // ABOUTME: Prerendered: the island is client:only, so there is nothing per-request to render.
+import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Footer from '../components/Footer.astro';
 import Dashboard from '../components/news/Dashboard';
+import shieldColor from '../assets/brand/jmcc-shield-color.png';
+
+// The brand mark is optimised here rather than imported inside the island.
+// A bare image import from a .tsx emits the 1627px master untouched — 356 kB
+// for a 36px-high logo. getImage() runs at build (this page prerenders) and
+// emits one webp at 3x the rendered box, which covers every display density
+// the nav logo on jmcc-website covers with densities={[1, 2, 3]}.
+//
+// 41x36, not square: the mark is 1.148:1, and a square box centre-crops the
+// shield's outer points off. Same numbers as the website's Nav.astro.
+const logo = await getImage({ src: shieldColor, width: 123, height: 108, format: 'webp' });
 
 // astro.config.mjs sets output: 'server' for the ingest and digest cron routes.
 // This page has no per-request work — the island renders entirely in the
@@ -30,7 +42,7 @@ export const prerender = true;
       nothing and the shift disappears. Keep this in step with .app's
       min-height in dashboard.css. */}
   <div class="dash-mount">
-    <Dashboard client:only="react" />
+    <Dashboard client:only="react" logoSrc={logo.src} />
   </div>
   <Footer />
 </BaseLayout>
