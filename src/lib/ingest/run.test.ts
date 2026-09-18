@@ -16,7 +16,7 @@ vi.mock('./rss', async (importOriginal) => ({
 }));
 
 const { supabaseAdmin } = await import('../supabase/admin');
-const { fetchNewsData, CreditCeilingError, NewsDataQuotaError } = await import('./newsdata');
+const { fetchNewsData, CreditCeilingError, NewsDataQuotaError, MAX_QUERY_LENGTH } = await import('./newsdata');
 const { fetchMarketaux } = await import('./marketaux');
 const { fetchFeed } = await import('./rss');
 const { runIngest } = await import('./run');
@@ -128,6 +128,26 @@ test('an ordinary NewsData failure skips only that query', async () => {
   expect(report.sourceErrors).toEqual([
     { name: 'NewsData:accounting', error: 'NewsData 500 for query "audit"' },
   ]);
+});
+
+test('discipline and sponsor queries stay within the NewsData query length limit', async () => {
+  const long = (n: number) => `keyword number ${n} padded out`;
+  const fake = fakeDb({
+    news_discipline_topics: [{ discipline: 'finance', keywords: [1, 2, 3, 4, 5].map(long) }],
+    news_sponsors: [{ id: 'sponsor-1', name: 'Acme', keywords: [1, 2, 3, 4, 5, 6].map(long) }],
+    news_sources: [],
+  });
+  vi.mocked(supabaseAdmin).mockReturnValue(fake.db as never);
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  await runIngest();
+
+  const queries = vi.mocked(fetchNewsData).mock.calls.map(([query]) => query);
+  expect(queries).toHaveLength(2);
+  for (const query of queries) {
+    expect(query.length).toBeGreaterThan(0);
+    expect(query.length).toBeLessThanOrEqual(MAX_QUERY_LENGTH);
+  }
 });
 
 test('a clean run queries every discipline and sponsor and reports nothing skipped', async () => {

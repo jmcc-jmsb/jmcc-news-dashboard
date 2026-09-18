@@ -58,6 +58,25 @@ export class CreditLedger {
   }
 }
 
+/**
+ * NewsData's free tier rejects a `q` longer than 100 characters with a 422.
+ * Five disciplines failed on the first live run (2026-09-18) because their
+ * keywords, joined, came to 102–108.
+ */
+export const MAX_QUERY_LENGTH = 100;
+
+/** Joins keywords with OR, in order, skipping any that would push the query
+ *  past MAX_QUERY_LENGTH. Keywords come from a table coaches can edit, so the
+ *  length is enforced here rather than trusted. */
+export function buildQuery(terms: string[]): string {
+  let query = '';
+  for (const term of terms) {
+    const next = query ? `${query} OR ${term}` : term;
+    if (next.length <= MAX_QUERY_LENGTH) query = next;
+  }
+  return query;
+}
+
 interface NewsDataArticle {
   title?: string;
   description?: string;
@@ -74,6 +93,9 @@ export async function fetchNewsData(
   signal?: AbortSignal,
 ): Promise<RawItem[]> {
   if (!NEWSDATA_API_KEY) throw new Error('NEWSDATA_API_KEY is not set');
+  // An empty q returns untargeted news, which runIngest would tag with the
+  // discipline it asked for. Refuse before spending a credit.
+  if (!query) throw new Error(`NewsData query is empty: no keyword fits in ${MAX_QUERY_LENGTH} characters`);
 
   ledger.charge(1);
 
