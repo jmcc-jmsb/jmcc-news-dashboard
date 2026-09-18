@@ -4,7 +4,7 @@
 import { DISCIPLINES, isDisciplineId, labelFor } from '../disciplines';
 import type { DisciplineId, FeedItem } from '../types';
 import { supabaseAdmin } from '../supabase/admin';
-import { CreditCeilingError, CreditLedger, NewsDataQuotaError, fetchNewsData } from './newsdata';
+import { CreditCeilingError, CreditLedger, NewsDataQuotaError, buildQuery, fetchNewsData } from './newsdata';
 import { fetchMarketaux } from './marketaux';
 import { fetchFeed, matchDisciplines, scrubError } from './rss';
 import { normalizeItem } from './normalize';
@@ -78,7 +78,7 @@ export async function runIngest(): Promise<IngestReport> {
       newsDataSkipped++;
       continue;
     }
-    const query = topic.keywords.slice(0, 5).join(' OR ');
+    const query = buildQuery(topic.keywords.slice(0, 5));
     try {
       const raw = await fetchNewsData(query, ledger);
       for (const item of raw) {
@@ -112,7 +112,7 @@ export async function runIngest(): Promise<IngestReport> {
     }
     const terms = [sponsor.name, ...(sponsor.keywords ?? [])].filter(Boolean);
     try {
-      const raw = await fetchNewsData(terms.join(' OR '), ledger);
+      const raw = await fetchNewsData(buildQuery(terms), ledger);
       for (const item of raw) {
         // Sponsor news is not discipline news; it is tagged to the sponsor and
         // surfaced in Sponsor Watch.

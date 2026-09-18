@@ -7,7 +7,8 @@ import { afterEach, expect, test, vi } from 'vitest';
 // it does not exist, so the key is stubbed.
 vi.mock('astro:env/server', () => ({ NEWSDATA_API_KEY: 'test-key' }));
 
-const { CreditLedger, CreditCeilingError, NewsDataQuotaError, fetchNewsData } = await import('./newsdata');
+const { CreditLedger, CreditCeilingError, NewsDataQuotaError, MAX_QUERY_LENGTH, buildQuery, fetchNewsData } =
+  await import('./newsdata');
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -34,4 +35,35 @@ test('any other failed status is an ordinary error, not a quota error', async ()
   const failure = fetchNewsData('finance', new CreditLedger());
   await expect(failure).rejects.toThrow('NewsData 500');
   await expect(failure).rejects.not.toBeInstanceOf(NewsDataQuotaError);
+});
+
+test('buildQuery drops the keyword that would push the query past the free-tier limit', () => {
+  // hr-marketing's first five keywords: joined whole they are 108 characters,
+  // and NewsData answered 422 on the first live run (2026-09-18).
+  const query = buildQuery([
+    'employer brand',
+    'hiring manager',
+    'employee value proposition',
+    'talent attraction',
+    'recruitment marketing',
+  ]);
+
+  expect(query).toBe('employer brand OR hiring manager OR employee value proposition OR talent attraction');
+  expect(query.length).toBeLessThanOrEqual(MAX_QUERY_LENGTH);
+});
+
+test('buildQuery skips a keyword too long on its own and keeps the ones after it', () => {
+  expect(buildQuery(['x'.repeat(MAX_QUERY_LENGTH + 1), 'audit'])).toBe('audit');
+});
+
+test('an empty query is refused before any credit is spent', async () => {
+  const fetchSpy = vi.fn();
+  vi.stubGlobal('fetch', fetchSpy);
+  const ledger = new CreditLedger();
+
+  // An empty q would return untargeted news, which ingest would then tag with
+  // the discipline it was querying for.
+  await expect(fetchNewsData('', ledger)).rejects.toThrow('empty');
+  expect(fetchSpy).not.toHaveBeenCalled();
+  expect(ledger.used).toBe(0);
 });
