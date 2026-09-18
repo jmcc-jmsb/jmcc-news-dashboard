@@ -19,6 +19,7 @@ function report(overrides: Partial<IngestReport>): IngestReport {
     finishedAt: '2026-09-17T11:00:30.000Z',
     creditsUsed: 66,
     newsDataSkipped: 0,
+    newsDataDeferred: 0,
     fetched: 10,
     duplicates: 0,
     rejected: 0,

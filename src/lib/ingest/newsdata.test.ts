@@ -23,10 +23,14 @@ test('the ledger throws a CreditCeilingError rather than spending past the ceili
   expect(ledger.used).toBe(2);
 });
 
-test('a 429 from NewsData is a NewsDataQuotaError, because the quota is gone for the day', async () => {
+test('a 429 from NewsData is a NewsDataQuotaError, because no more queries will succeed this run', async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 429 })));
 
-  await expect(fetchNewsData('finance', new CreditLedger())).rejects.toBeInstanceOf(NewsDataQuotaError);
+  const failure = fetchNewsData('finance', new CreditLedger());
+  await expect(failure).rejects.toBeInstanceOf(NewsDataQuotaError);
+  // NewsData sends 429 for the 15-minute rate limit as well as the daily
+  // quota, so the message must not claim which one it was.
+  await expect(failure).rejects.toThrow('rate limit or daily quota reached');
 });
 
 test('any other failed status is an ordinary error, not a quota error', async () => {

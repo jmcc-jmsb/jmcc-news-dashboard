@@ -82,8 +82,13 @@ Read the JSON it returns:
   `news_sources.last_error` too.
 - **500** — either the run threw, or it saved nothing at all. Zero rows is
   deliberately a failure: a feed that updates nothing must never read as green.
-- `newsDataSkipped` above zero means NewsData credits ran out mid-run. The rest
-  of the run still completed; see `docs/CRON_OPTIONS.md` for the budget.
+- `newsDataSkipped` above zero means NewsData refused queries mid-run (a 429, or
+  our own ceiling). The rest of the run still completed; see
+  `docs/CRON_OPTIONS.md` for the budget. A manual re-run within 15 minutes of
+  another run will usually get here.
+- `newsDataDeferred` is normally 3. That is expected, not a failure: 33
+  disciplines do not fit NewsData's 30-per-15-minutes limit, so three sit out
+  each day in rotation.
 
 Then load <https://news.wecompete.ca> and check that headlines appear, that the
 discipline bar switches sections, and that the AI Angle filter shows a count.

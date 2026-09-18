@@ -62,6 +62,27 @@ gap between four runs and one is smaller than it looks — but one run a day
 means a story breaking just after ingest is invisible to delegates for a full
 24 hours, and competition week is exactly when that matters.
 
+## The limit that actually binds: 30 credits per 15 minutes
+
+Found on the second live run, 2026-09-18. Besides 200 credits a day, NewsData's
+free tier allows **30 credits per 15-minute window** and answers 429 past it. A
+run takes about ten seconds, so it gets one window — and there are 33
+disciplines.
+
+`runIngest` therefore sends at most 30 discipline queries a run. It sorts the
+disciplines by id and starts 30 further along each day, so the three that sit
+out change daily and each discipline misses about one day in eleven. The report
+counts them as `newsDataDeferred`, and they do not turn the cron's 200 into a 207.
+
+Two consequences to know before changing anything here:
+
+- **Sponsors come after disciplines**, so the first active sponsor will find the
+  window already spent and show up in `sourceErrors` as skipped. Give sponsor
+  queries their slots before the discipline rotation when that happens.
+- **The rotation is keyed on the day.** Under option 3's four runs a day, every
+  run would query the same 30. Key it on the run instead (for example the hour)
+  if the schedule ever changes.
+
 ## The three options
 
 ### 1. Upgrade to Vercel Pro
