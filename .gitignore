@@ -33,3 +33,6 @@ pnpm-debug.log*
 # The negation matters: .env.example is documentation and MUST be committed.
 .env*
 !.env.example
+
+# Claude Code personal settings
+.claude/settings.local.json
