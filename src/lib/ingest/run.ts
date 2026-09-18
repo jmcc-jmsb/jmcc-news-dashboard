@@ -4,7 +4,14 @@
 import { DISCIPLINES, isDisciplineId, labelFor } from '../disciplines';
 import type { DisciplineId, FeedItem } from '../types';
 import { supabaseAdmin } from '../supabase/admin';
-import { CreditCeilingError, CreditLedger, NewsDataQuotaError, buildQuery, fetchNewsData } from './newsdata';
+import {
+  CreditCeilingError,
+  CreditLedger,
+  NewsDataQuotaError,
+  RATE_LIMIT_CREDITS,
+  buildQuery,
+  fetchNewsData,
+} from './newsdata';
 import { fetchMarketaux } from './marketaux';
 import { fetchFeed, matchDisciplines, scrubError } from './rss';
 import { normalizeItem } from './normalize';
@@ -16,6 +23,8 @@ export interface IngestReport {
   creditsUsed: number;
   /** NewsData queries not attempted because credits ran out mid-run. */
   newsDataSkipped: number;
+  /** Discipline queries left for a later day by the rotation. Expected, not an error. */
+  newsDataDeferred: number;
   fetched: number;
   duplicates: number;
   rejected: number;
@@ -44,7 +53,10 @@ interface TopicRow {
 export async function runIngest(): Promise<IngestReport> {
   const startedAt = new Date().toISOString();
   const db = supabaseAdmin();
-  const ledger = new CreditLedger();
+  // The ceiling is the rate-limit window, not the daily quota: past it NewsData
+  // answers 429 anyway. Sponsors query after disciplines, so once any exist they
+  // will hit this ceiling and be reported as skipped — loudly, not silently.
+  const ledger = new CreditLedger(RATE_LIMIT_CREDITS);
   const sourceErrors: { name: string; error: string }[] = [];
   const collected: FeedItem[] = [];
   let rejected = 0;
@@ -72,8 +84,20 @@ export async function runIngest(): Promise<IngestReport> {
     );
   }
 
-  // ── NewsData: one query per discipline ──────────────────────────────────────
-  for (const topic of topics) {
+  // ── NewsData: one query per discipline, one rate-limit window per run ───────
+  // There are more disciplines than RATE_LIMIT_CREDITS, so each run takes the
+  // next window's worth in a fixed order and the rest wait. The start advances
+  // by a full window each day, so the ones left out differ daily and every
+  // discipline comes round within a few days. Sorted first: the database
+  // returns rows in no guaranteed order, and a changing order would let the
+  // same discipline be left out day after day.
+  const ordered = [...topics].sort((a, b) => a.discipline.localeCompare(b.discipline));
+  const day = Math.floor(Date.parse(startedAt) / 86_400_000);
+  const start = (day * RATE_LIMIT_CREDITS) % ordered.length;
+  const scheduled = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, RATE_LIMIT_CREDITS);
+  const newsDataDeferred = ordered.length - scheduled.length;
+
+  for (const topic of scheduled) {
     if (creditsExhausted) {
       newsDataSkipped++;
       continue;
@@ -215,6 +239,7 @@ export async function runIngest(): Promise<IngestReport> {
     finishedAt: new Date().toISOString(),
     creditsUsed: ledger.used,
     newsDataSkipped,
+    newsDataDeferred,
     fetched: collected.length,
     duplicates,
     rejected,

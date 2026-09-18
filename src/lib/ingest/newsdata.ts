@@ -15,10 +15,9 @@ const ENDPOINT = 'https://newsdata.io/api/1/latest';
  * JDC/JDCC disciplines plus ~1 per active sponsor.
  *
  * **The registry is now 33** (SMNG, FO and HM added 22), and run.ts issues one
- * query per discipline — so budget ~66 credits per run, not ~22. That still
- * clears the 150 ceiling and the 200/day tier, but the headroom is a third of
- * what it was. Adding a fifth competition is the point at which this needs
- * re-checking rather than assuming.
+ * query per discipline — 33 credits a run, well inside 150 and 200/day. The
+ * daily quota is not the limit that binds, though: RATE_LIMIT_CREDITS below
+ * is, and runIngest now caps a run at it rather than at this ceiling.
  *
  * The ceiling is enforced anyway. Quota exhaustion is silent — NewsData simply
  * stops returning articles — and a feed that empties during competition week
@@ -26,13 +25,23 @@ const ENDPOINT = 'https://newsdata.io/api/1/latest';
  */
 export const DAILY_CREDIT_CEILING = 150;
 
+/**
+ * The limit that actually binds: the free tier also allows only **30 credits per
+ * 15 minutes**, and answers 429 past it. A run takes seconds, so it gets one
+ * window. 33 disciplines do not fit in 30, which the second live run on
+ * 2026-09-18 found out; runIngest rotates which disciplines sit out each day.
+ */
+export const RATE_LIMIT_CREDITS = 30;
+
 /** Our own ceiling was reached. No credit was spent on the refused query. */
 export class CreditCeilingError extends Error {
   override name = 'CreditCeilingError';
 }
 
-/** NewsData answered 429: the real daily quota is gone, whatever our ledger says.
- *  The ledger only counts one run, so a manual re-run on the same day can get here. */
+/** NewsData answered 429: either the 15-minute rate limit or the daily quota is
+ *  gone, whatever our ledger says, and the response does not say which. The
+ *  ledger only counts one run, so a manual re-run within 15 minutes, or late
+ *  on a busy day, can get here. */
 export class NewsDataQuotaError extends Error {
   override name = 'NewsDataQuotaError';
 }
@@ -106,7 +115,7 @@ export async function fetchNewsData(
 
   const res = await fetch(url, { signal });
   if (res.status === 429) {
-    throw new NewsDataQuotaError(`NewsData 429 for query "${query}": daily quota exhausted`);
+    throw new NewsDataQuotaError(`NewsData 429 for query "${query}": rate limit or daily quota reached`);
   }
   if (!res.ok) {
     // Anything other than a 429 is worth surfacing verbatim.

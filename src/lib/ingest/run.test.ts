@@ -16,7 +16,9 @@ vi.mock('./rss', async (importOriginal) => ({
 }));
 
 const { supabaseAdmin } = await import('../supabase/admin');
-const { fetchNewsData, CreditCeilingError, NewsDataQuotaError, MAX_QUERY_LENGTH } = await import('./newsdata');
+const { fetchNewsData, CreditCeilingError, NewsDataQuotaError, MAX_QUERY_LENGTH, RATE_LIMIT_CREDITS } =
+  await import('./newsdata');
+const { DISCIPLINES } = await import('../disciplines');
 const { fetchMarketaux } = await import('./marketaux');
 const { fetchFeed } = await import('./rss');
 const { runIngest } = await import('./run');
@@ -87,7 +89,7 @@ test('reaching the credit ceiling stops NewsData but still writes everything alr
 
   const report = await runIngest();
 
-  // finance ran, accounting hit the ceiling, and neither tax nor the sponsor was attempted.
+  // The first discipline ran, the second hit the ceiling, and neither the third nor the sponsor was attempted.
   expect(fetchNewsData).toHaveBeenCalledTimes(2);
   expect(report.newsDataSkipped).toBe(3);
   expect(urls('news_articles')).toEqual(
@@ -116,10 +118,10 @@ test("a 429 from NewsData stops further NewsData queries for the rest of the run
 });
 
 test('an ordinary NewsData failure skips only that query', async () => {
-  vi.mocked(fetchNewsData)
-    .mockResolvedValueOnce([])
-    .mockRejectedValueOnce(new Error('NewsData 500 for query "audit"'))
-    .mockResolvedValue([]);
+  vi.mocked(fetchNewsData).mockImplementation(async (query) => {
+    if (query === 'audit') throw new Error('NewsData 500 for query "audit"');
+    return [];
+  });
 
   const report = await runIngest();
 
@@ -148,6 +150,70 @@ test('discipline and sponsor queries stay within the NewsData query length limit
     expect(query.length).toBeGreaterThan(0);
     expect(query.length).toBeLessThanOrEqual(MAX_QUERY_LENGTH);
   }
+});
+
+/** Every discipline in the registry, each keyed by its own id so a query names its discipline. */
+function allDisciplines(fake = fakeDb) {
+  const topics = DISCIPLINES.map((d) => ({ discipline: d.id, keywords: [d.id] }));
+  const db = fake({ news_discipline_topics: topics, news_sponsors: [], news_sources: [] });
+  vi.mocked(supabaseAdmin).mockReturnValue(db.db as never);
+  return topics;
+}
+
+/** Runs ingest as if on the given UTC date and returns the discipline queries it sent. */
+async function queriesOn(date: string) {
+  vi.setSystemTime(new Date(`${date}T11:00:00Z`));
+  vi.mocked(fetchNewsData).mockClear();
+  const report = await runIngest();
+  return { report, queries: vi.mocked(fetchNewsData).mock.calls.map(([query]) => query) };
+}
+
+test('a run sends at most one rate-limit window of NewsData queries and defers the rest quietly', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  const { report, queries } = await queriesOn('2026-09-19');
+
+  expect(DISCIPLINES.length).toBeGreaterThan(RATE_LIMIT_CREDITS);
+  expect(queries).toHaveLength(RATE_LIMIT_CREDITS);
+  expect(report.newsDataDeferred).toBe(DISCIPLINES.length - RATE_LIMIT_CREDITS);
+  // Planned deferral is not a failure, so it must not turn the cron's 200 into a 207.
+  expect(report.sourceErrors).toEqual([]);
+  expect(report.newsDataSkipped).toBe(0);
+  vi.useRealTimers();
+});
+
+test('the deferred disciplines change daily, so every discipline is queried within a few days', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  const day1 = (await queriesOn('2026-09-19')).queries;
+  const day2 = (await queriesOn('2026-09-20')).queries;
+  expect(new Set(day1)).not.toEqual(new Set(day2));
+
+  const seen = new Set<string>();
+  for (let day = 19; day <= 29; day++) {
+    for (const q of (await queriesOn(`2026-09-${day}`)).queries) seen.add(q);
+  }
+  expect(seen).toEqual(new Set(DISCIPLINES.map((d) => d.id)));
+  vi.useRealTimers();
+});
+
+test('the day decides which disciplines run, not the order the database returns them in', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  allDisciplines();
+  const asStored = (await queriesOn('2026-09-19')).queries;
+  allDisciplines((tables) =>
+    fakeDb({ ...tables, news_discipline_topics: [...tables.news_discipline_topics].reverse() }),
+  );
+  const reversed = (await queriesOn('2026-09-19')).queries;
+
+  expect(reversed).toEqual(asStored);
+  vi.useRealTimers();
 });
 
 test('a clean run queries every discipline and sponsor and reports nothing skipped', async () => {
