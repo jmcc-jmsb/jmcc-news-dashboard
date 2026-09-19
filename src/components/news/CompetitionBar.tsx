@@ -1,7 +1,9 @@
 // ABOUTME: The four competition sections — JDC/JDCC, SMNG, FO, HM — above the discipline pills.
 // ABOUTME: Selecting one swaps the entire discipline set below it; sections never share a discipline.
 
+import { useEffect, useRef } from 'react';
 import { COMPETITIONS } from '../../lib/competitions';
+import { revealActivePill } from '../../lib/pills';
 
 interface Props {
   competition: string;
@@ -11,6 +13,9 @@ interface Props {
 
 export function CompetitionBar({ competition, setCompetition, disabled }: Props) {
   const active = COMPETITIONS.find((c) => c.id === competition);
+  const row = useRef<HTMLDivElement>(null);
+
+  useEffect(() => revealActivePill(row.current), [competition]);
 
   return (
     <div className={'competition-bar ' + (disabled ? 'is-disabled' : '')}>
@@ -18,7 +23,7 @@ export function CompetitionBar({ competition, setCompetition, disabled }: Props)
         <span className="meta dl-label" id="competition-label">
           COMPETITION
         </span>
-        <div className="pills" role="group" aria-labelledby="competition-label">
+        <div className="pills" role="group" aria-labelledby="competition-label" ref={row}>
           {COMPETITIONS.map((c) => (
             <button
               key={c.id}

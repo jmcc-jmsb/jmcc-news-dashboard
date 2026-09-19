@@ -23,7 +23,7 @@ export function ReportsPanel({
   toggleBookmark,
 }: Props) {
   return (
-    <div className="rail-block">
+    <div className="rail-block" id="reports">
       <div className="rail-head">
         <div className="kicker meta">RAIL</div>
         <h3 className="rail-title">Consulting Reports &amp; Insights</h3>
