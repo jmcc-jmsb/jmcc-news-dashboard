@@ -3,6 +3,7 @@
 
 import type { Tab, Theme } from '../../lib/types';
 import { Icon } from './ui/Icon';
+import { useHeightVar } from '../../lib/use-height-var';
 
 interface Props {
   /** Built URL of the JMCC shield, optimised by the host page. */
@@ -28,8 +29,10 @@ export function DashboardBar({
   showSpecsTab,
   showSponsorsTab,
 }: Props) {
+  const bar = useHeightVar<HTMLDivElement>('--dash-bar-h');
+
   return (
-    <div className="dash-bar">
+    <div className="dash-bar" ref={bar}>
       <div className="dash-bar-inner">
         {/* The site nav was removed deliberately — this is the dashboard, not
             the website. What the nav did still carry was the identification of

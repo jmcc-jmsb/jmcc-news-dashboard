@@ -4,6 +4,7 @@
 import { useEffect, useRef } from 'react';
 import { disciplinesIn } from '../../lib/disciplines';
 import { revealActivePill } from '../../lib/pills';
+import { useHeightVar } from '../../lib/use-height-var';
 import type { DisciplineId } from '../../lib/types';
 
 interface Props {
@@ -19,11 +20,12 @@ interface Props {
 export function DisciplineBar({ discipline, setDiscipline, competition, disabled }: Props) {
   const disciplines = disciplinesIn(competition);
   const row = useRef<HTMLDivElement>(null);
+  const bar = useHeightVar<HTMLDivElement>('--discipline-bar-h');
 
   useEffect(() => revealActivePill(row.current), [discipline]);
 
   return (
-    <div className={'discipline-bar ' + (disabled ? 'is-disabled' : '')}>
+    <div className={'discipline-bar ' + (disabled ? 'is-disabled' : '')} ref={bar}>
       <div className="discipline-bar-inner">
         <span className="meta dl-label" id="discipline-label">
           DISCIPLINE
