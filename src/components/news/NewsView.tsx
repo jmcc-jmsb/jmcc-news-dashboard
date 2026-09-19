@@ -108,6 +108,13 @@ export function NewsView({
               {Icon.refresh}
               <span>Refresh</span>
             </button>
+            {/* Below 981px the rail stacks under the whole feed and "Load
+                more", thousands of pixels down on a phone. CSS hides this
+                link while the rail sits beside the feed. */}
+            <a className="ghost-btn reports-link" href="#reports">
+              <span>Reports</span>
+              {rail.status === 'ready' && <span className="count">{rail.items.length}</span>}
+            </a>
           </div>
         </div>
 

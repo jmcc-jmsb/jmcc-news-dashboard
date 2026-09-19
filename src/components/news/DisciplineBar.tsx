@@ -1,7 +1,9 @@
 // ABOUTME: The selected competition's discipline pills, disabled while the Saved tab is open.
 // ABOUTME: Pills are square per the zero-radius brand rule; active uses accent, not gold-on-cream.
 
+import { useEffect, useRef } from 'react';
 import { disciplinesIn } from '../../lib/disciplines';
+import { revealActivePill } from '../../lib/pills';
 import type { DisciplineId } from '../../lib/types';
 
 interface Props {
@@ -16,6 +18,9 @@ interface Props {
 
 export function DisciplineBar({ discipline, setDiscipline, competition, disabled }: Props) {
   const disciplines = disciplinesIn(competition);
+  const row = useRef<HTMLDivElement>(null);
+
+  useEffect(() => revealActivePill(row.current), [discipline]);
 
   return (
     <div className={'discipline-bar ' + (disabled ? 'is-disabled' : '')}>
@@ -23,7 +28,7 @@ export function DisciplineBar({ discipline, setDiscipline, competition, disabled
         <span className="meta dl-label" id="discipline-label">
           DISCIPLINE
         </span>
-        <div className="pills" role="group" aria-labelledby="discipline-label">
+        <div className="pills" role="group" aria-labelledby="discipline-label" ref={row}>
           {disciplines.map((d) => (
             <button
               key={d.id}

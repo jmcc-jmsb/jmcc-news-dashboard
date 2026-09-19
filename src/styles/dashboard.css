@@ -1016,7 +1016,19 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* responsive */
 @media (max-width: 700px) {
-  .header-main { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
+  .dash-bar-inner { padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
+  /* Only the discipline row pins on a phone. Both bars stick at top: 0, and the
+     taller two-row dash bar would sit on top of the discipline row and hide the
+     selected pill. The tabs are one scroll away; the filter is used mid-feed. */
+  .dash-bar { position: static; }
+  /* One row that swipes sideways instead of wrapping to seven. Wrapped, the
+     sticky discipline bar pinned a third of the screen over the feed. */
+  .pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  .pills::-webkit-scrollbar { display: none; }
+  .competition-bar-inner { padding: 10px 16px; gap: 12px; align-items: center; }
+  .discipline-bar-inner { align-items: center; }
+  .section-head { flex-wrap: wrap; }
+  .section-actions { flex-wrap: wrap; flex-shrink: 1; }
   .nav { order: 3; width: 100%; justify-content: flex-start; }
   .nav-link.active::after { bottom: -12px; }
   .nav-link { padding: 8px 0; margin-right: 14px; }
@@ -1027,3 +1039,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .saved-head { flex-direction: column; align-items: stretch; }
   .search-bar { width: 100%; }
 }
+
+/* Touch screens get 44px targets (Apple HIG / WCAG 2.5.5). Keyed to the input,
+   not the width: a tablet is touch at desktop widths, a narrow desktop window
+   is not. Read-link keeps its small type and only grows its hit area.
+   Height only on text controls: a min-width would replace flex's min-width:
+   auto, and the swipe-row pills would then shrink under their own labels. */
+@media (pointer: coarse) {
+  .nav-link, .pill, .ghost-btn, .read-link { min-height: 44px; }
+  .icon-btn, .bm { width: 44px; height: 44px; }
+}
+
+/* The reports rail stacks below the whole feed once the grid is one column,
+   so the feed header links down to it. Hidden while the rail sits beside it. */
+.reports-link { text-decoration: none; }
+@media (min-width: 981px) { .reports-link { display: none; } }
+/* Clear the pinned discipline row when the link jumps here. */
+#reports { scroll-margin-top: 80px; }
