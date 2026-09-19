@@ -1,4 +1,4 @@
-# ABOUTME: CI — typecheck, unit tests, and a production build on every push and PR.
+# ABOUTME: CI — typecheck, unit and browser tests, and a production build on every push and PR.
 # ABOUTME: Also greps for secrets reaching client code, which env.schema already blocks at build time.
 name: CI
 
@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       - run: npm run build
 
       # Second line of defence behind astro.config.mjs's env.schema. If a secret

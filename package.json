@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "test": "vitest run",
-    "astro": "astro"
+    "astro": "astro",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -37,6 +38,7 @@
     "esbuild@0.28.2": true
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "vitest": "^4.1.11"
   }
 }

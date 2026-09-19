@@ -24,6 +24,7 @@ npm run dev
 | `npm run build` | Production build (also validates `specs.json`) |
 | `npm run typecheck` | `astro check` |
 | `npm test` | Unit tests — pins `h()`, the ingest dedupe key |
+| `npm run test:e2e` | Browser tests (Playwright) — phone-width layout, on fixtures. First run: `npx playwright install chromium` |
 
 Node >= 22.12 required.
 

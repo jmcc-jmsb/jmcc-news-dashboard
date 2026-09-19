@@ -226,3 +226,4 @@ and `assets/brand/` are copies from `jmcc-website`. There is no shared package.
 - `npm run dev` — local dev
 - `npm run build` — production build
 - `npm run typecheck` — `astro check`
+- `npm run test:e2e` — Playwright, phone-width layout checks in `e2e/`
