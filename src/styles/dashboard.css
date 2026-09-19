@@ -288,7 +288,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: var(--bg-sunken);
   border-bottom: 1px solid var(--line);
   position: sticky;
-  top: 0;
+  /* Directly below the sticky dash bar, whose height DashboardBar measures:
+     at top: 0 the dash bar sat over this bar's first row of pills. */
+  top: var(--dash-bar-h, 0px);
   z-index: 10;
 }
 .discipline-bar.is-disabled { opacity: 0.5; pointer-events: none; }
@@ -536,7 +538,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   display: flex; flex-direction: column; gap: 28px;
   align-self: start;
   position: sticky;
-  top: 70px;
+  /* Below both pinned bars, each measured by its component. */
+  top: calc(var(--dash-bar-h, 0px) + var(--discipline-bar-h, 0px) + 16px);
 }
 @media (max-width: 980px) { .col-rail { position: static; } }
 
@@ -1021,6 +1024,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
      taller two-row dash bar would sit on top of the discipline row and hide the
      selected pill. The tabs are one scroll away; the filter is used mid-feed. */
   .dash-bar { position: static; }
+  .discipline-bar { top: 0; }
   /* One row that swipes sideways instead of wrapping to seven. Wrapped, the
      sticky discipline bar pinned a third of the screen over the feed. */
   .pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
@@ -1054,5 +1058,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
    so the feed header links down to it. Hidden while the rail sits beside it. */
 .reports-link { text-decoration: none; }
 @media (min-width: 981px) { .reports-link { display: none; } }
-/* Clear the pinned discipline row when the link jumps here. */
-#reports { scroll-margin-top: 80px; }
+/* Clear whatever is pinned when the link jumps here: both bars on a tablet,
+   only the discipline row on a phone, where the dash bar scrolls away. */
+#reports { scroll-margin-top: calc(var(--dash-bar-h, 0px) + var(--discipline-bar-h, 0px) + 16px); }
+@media (max-width: 700px) {
+  #reports { scroll-margin-top: calc(var(--discipline-bar-h, 0px) + 16px); }
+}
