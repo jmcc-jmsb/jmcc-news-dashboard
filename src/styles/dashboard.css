@@ -163,6 +163,18 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Fixed box, not `height: auto`: the src is a webp emitted at build, and
+   reserving both axes keeps the sticky bar from reflowing when it decodes.
+   41x36 is the mark's own 1.148:1 — see the note in pages/index.astro. */
+.dash-brand-logo {
+  width: 41px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .dash-brand-sub {
   font-family: var(--font-sans);

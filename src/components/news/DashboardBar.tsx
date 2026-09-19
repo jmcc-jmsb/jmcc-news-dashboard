@@ -5,6 +5,8 @@ import type { Tab, Theme } from '../../lib/types';
 import { Icon } from './ui/Icon';
 
 interface Props {
+  /** Built URL of the JMCC shield, optimised by the host page. */
+  logoSrc: string;
   theme: Theme;
   setTheme: (t: Theme) => void;
   tab: Tab;
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export function DashboardBar({
+  logoSrc,
   theme,
   setTheme,
   tab,
@@ -29,11 +32,20 @@ export function DashboardBar({
     <div className="dash-bar">
       <div className="dash-bar-inner">
         {/* The site nav was removed deliberately — this is the dashboard, not
-            the website. What the nav did still carry, though, was the only
-            identification of whose product this is and the only route back to
-            the main site. This wordmark is the minimum that replaces both: set
-            in the brand display face, dashboard-owned, one link out. */}
-        <a className="dash-brand" href="https://www.wecompete.ca">
+            the website. What the nav did still carry was the identification of
+            whose product this is, and the shield plus wordmark is the minimum
+            that replaces it: the website's own mark, set in the brand display
+            face, dashboard-owned.
+
+            It links to the dashboard root, not to wecompete.ca. A brand mark in
+            the top-left is read as "home", and here home is this dashboard —
+            "/" drops ?tab, ?discipline and ?ai, so it returns to the default
+            News Feed from any tab or shared link. The route back to the main
+            site is the Footer, which links out in full. */}
+        <a className="dash-brand" href="/">
+          {/* Decorative: the wordmark beside it already names the product, so
+              a second reading of "JMCC" would only be noise to a screen reader. */}
+          <img className="dash-brand-logo" src={logoSrc} alt="" width={41} height={36} />
           JMCC <span className="dash-brand-sub">News &amp; Resources</span>
         </a>
         <nav className="nav" aria-label="Dashboard sections">
