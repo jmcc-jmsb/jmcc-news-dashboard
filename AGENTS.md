@@ -70,8 +70,19 @@ separate.
 - Owner-facing guide: docs/EDITING_SPONSORS.md.
 
 ## Competitions
-- Four sections: JDC/JDCC (one section, two events), SMNG, FO, HM. Content is
-  src/content/competitions.json, derived from jmcc-website's competitions.json.
+- Five sections: JDC/JDCC (one section, two events), SMNG, FO, HM, and
+  International. Content is src/content/competitions.json, derived from
+  jmcc-website's competitions.json.
+- **International is a different kind of section.** Its pills are competitions,
+  not subject areas: TUBC, Eller, HICC, MICC, UNICC, BBICC. Each carries an ISO
+  country in disciplines.ts and reads that country's business news, which is
+  what separates the six feeds — their keywords are nearly identical (Eller
+  excepted: it is the circuit's only ethics competition).
+- A section of more than two events names only the selected event in the
+  events strip. Two or fewer list them all, because JDC and JDCC share a
+  section and a delegate needs to see both.
+- An event's `url` may be null — BBICC has no public site in the website's
+  registry. Render the name without a link; never invent one.
 - **Every discipline belongs to exactly ONE competition.** The 33 ids are
   disjoint, because the source registry already distinguishes each
   competition's variant by slug (tax vs taxation, accounting vs
@@ -108,6 +119,18 @@ separate.
   it matched. h() itself is unchanged and is still the first column.
 - The specs page has THREE sections: frameworks, metrics, sources.
   Overview and Glossary were cut deliberately. Do not re-add them.
+
+## News is country-filtered
+- The four regional sections compete in Quebec, Ontario and New Brunswick, so
+  their NewsData queries send `country=ca`. Before that filter the feed carried
+  US local stories no delegate is preparing a case on.
+- The international competitions send their host country instead, ONE query per
+  country: three of the six are in the US and would otherwise spend three
+  credits on near-identical news. Each article is tagged to every competition
+  held in that country.
+- A country costs no extra credit — it filters the same single request.
+- The country queries are NOT in the daily rotation. Only the regional
+  disciplines rotate, through `RATE_LIMIT_CREDITS` minus one per host country.
 
 ## Ingest schedule
 - **Ingest runs ONCE PER DAY**, `0 11 * * *`. This is an owner decision, not an
