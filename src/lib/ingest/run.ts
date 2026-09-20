@@ -1,7 +1,7 @@
 // ABOUTME: Orchestrates one ingest run — reads topics and sources, fetches, normalizes, dedupes, upserts.
 // ABOUTME: Returns a per-run report so the cron response says exactly what happened and what it cost.
 
-import { DISCIPLINES, isDisciplineId, labelFor } from '../disciplines';
+import { DISCIPLINE_REGISTRY, countryOf, isDisciplineId, labelFor } from '../disciplines';
 import type { DisciplineId, FeedItem } from '../types';
 import { supabaseAdmin } from '../supabase/admin';
 import {
@@ -37,6 +37,10 @@ interface TopicRow {
   discipline: string;
   keywords: string[];
 }
+
+/** Where the four regional sections compete: JDC/JDCC, SMNG, FO and HM all run
+ *  in Quebec, Ontario or New Brunswick, so their news is Canadian. */
+const REGIONAL_COUNTRY = 'ca';
 
 /**
  * One run. Every stage is best-effort: a failing source is recorded and skipped
@@ -84,42 +88,92 @@ export async function runIngest(): Promise<IngestReport> {
     );
   }
 
-  // ── NewsData: one query per discipline, one rate-limit window per run ───────
-  // There are more disciplines than RATE_LIMIT_CREDITS, so each run takes the
-  // next window's worth in a fixed order and the rest wait. The start advances
-  // by a full window each day, so the ones left out differ daily and every
-  // discipline comes round within a few days. Sorted first: the database
-  // returns rows in no guaranteed order, and a changing order would let the
-  // same discipline be left out day after day.
-  const ordered = [...topics].sort((a, b) => a.discipline.localeCompare(b.discipline));
+  // ── NewsData: country-filtered queries ─────────────────────────────────────
+  // Two kinds of query, because the sections are two kinds of thing.
+  //
+  // The four regional sections compete in Quebec, Ontario and New Brunswick, so
+  // their disciplines read Canadian news. Before this filter the feed carried
+  // US local stories — a Chicago mayoral race, a Myrtle Beach tourism piece —
+  // which no delegate is preparing a case on.
+  //
+  // The six international competitions are not subject areas but destinations,
+  // so each reads business news from its host country. They group BY COUNTRY:
+  // three of the six are in the United States and would otherwise spend three
+  // credits fetching near-identical news. One query per country, tagged to
+  // every competition held there.
+  const intlTopics = topics.filter((t) => countryOf(t.discipline));
+  const regionalTopics = topics.filter((t) => !countryOf(t.discipline));
+
+  /** Host country → the competitions there. Driven by the registry, not by the
+   *  rows: Supabase returns them in no guaranteed order, and the order decides
+   *  both which country is queried first and how the shared query reads. */
+  const intlByDiscipline = new Map(intlTopics.map((t) => [t.discipline, t]));
+  const byCountry = new Map<string, TopicRow[]>();
+  for (const { id, country } of DISCIPLINE_REGISTRY) {
+    const topic = country && intlByDiscipline.get(id);
+    if (!country || !topic) continue;
+    byCountry.set(country, [...(byCountry.get(country) ?? []), topic]);
+  }
+
+  // There are more regional disciplines than credits left after the country
+  // queries, so each run takes the next window's worth in a fixed order and the
+  // rest wait. The start advances by a full window each day, so the ones left
+  // out differ daily and every discipline comes round within a few days. Sorted
+  // first: the database returns rows in no guaranteed order, and a changing
+  // order would let the same discipline be left out day after day.
+  //
+  // The country queries are NOT in the rotation. There are only four of them,
+  // and a competition feed that goes dark for a day or two before the team
+  // flies out is worse than a discipline waiting one more day.
+  const rotatingBudget = Math.max(RATE_LIMIT_CREDITS - byCountry.size, 0);
+  const ordered = [...regionalTopics].sort((a, b) => a.discipline.localeCompare(b.discipline));
   const day = Math.floor(Date.parse(startedAt) / 86_400_000);
-  const start = (day * RATE_LIMIT_CREDITS) % ordered.length;
-  const scheduled = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, RATE_LIMIT_CREDITS);
+  const start = ordered.length ? (day * rotatingBudget) % ordered.length : 0;
+  const scheduled = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, rotatingBudget);
   const newsDataDeferred = ordered.length - scheduled.length;
 
-  for (const topic of scheduled) {
+  /** One query, its articles tagged to each discipline it was asked for. */
+  const queryFor = async (name: string, keywords: string[], country: string, forDisciplines: string[]) => {
     if (creditsExhausted) {
       newsDataSkipped++;
-      continue;
+      return;
     }
-    const query = buildQuery(topic.keywords.slice(0, 5));
+    const query = buildQuery(keywords.slice(0, 5));
     try {
-      const raw = await fetchNewsData(query, ledger);
+      const raw = await fetchNewsData(query, ledger, { country });
       for (const item of raw) {
-        const norm = normalizeItem(item, topic.discipline as DisciplineId, labelFor(topic.discipline));
-        if (norm) collected.push(norm);
-        else rejected++;
+        for (const discipline of forDisciplines) {
+          const norm = normalizeItem(item, discipline as DisciplineId, labelFor(discipline));
+          if (norm) collected.push(norm);
+          else rejected++;
+        }
       }
     } catch (err) {
-      // Out of credits is not one more per-discipline error: it ends NewsData
-      // for this run, and the failed query counts as skipped.
+      // Out of credits is not one more per-query error: it ends NewsData for
+      // this run, and the failed query counts as skipped.
       if (err instanceof CreditCeilingError || err instanceof NewsDataQuotaError) {
         creditsExhausted = scrubError(err);
         newsDataSkipped++;
-        continue;
+        return;
       }
-      sourceErrors.push({ name: `NewsData:${topic.discipline}`, error: scrubError(err) });
+      sourceErrors.push({ name: `NewsData:${name}`, error: scrubError(err) });
     }
+  };
+
+  for (const [country, group] of byCountry) {
+    // The group shares a query, so it shares keywords: each competition's own
+    // set in registry order, deduped, and buildQuery takes what fits.
+    const keywords = [...new Set(group.flatMap((t) => t.keywords))];
+    await queryFor(
+      group.map((t) => t.discipline).join('+'),
+      keywords,
+      country,
+      group.map((t) => t.discipline),
+    );
+  }
+
+  for (const topic of scheduled) {
+    await queryFor(topic.discipline, topic.keywords, REGIONAL_COUNTRY, [topic.discipline]);
   }
 
   // ── NewsData: one query per active sponsor (brief §3d) ──────────────────────
@@ -246,7 +300,7 @@ export async function runIngest(): Promise<IngestReport> {
     upserted,
     sourceErrors,
     disciplinesCovered: [...new Set(deduped.map((i) => i.disciplineId))].filter((d) =>
-      DISCIPLINES.some((x) => x.id === d),
+      DISCIPLINE_REGISTRY.some((x) => x.id === d),
     ),
   };
 }
