@@ -38,3 +38,6 @@ pnpm-debug.log*
 .claude/settings.local.json
 test-results/
 playwright-report/
+
+# supabase CLI link state — per-machine, not project config
+supabase/.temp/

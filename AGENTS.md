@@ -128,9 +128,21 @@ separate.
   country: three of the six are in the US and would otherwise spend three
   credits on near-identical news. Each article is tagged to every competition
   held in that country.
-- A country costs no extra credit — it filters the same single request.
+- Every discipline query also sends `category=business`. The keyword match runs
+  over the whole article, so 'credit' and 'market' pulled in an Asian Games
+  schedule on the first country-filtered run. The SPONSOR query deliberately
+  sends no category: a sponsor is tracked wherever it turns up.
+- A country and a category cost no extra credit — they filter the same request.
 - The country queries are NOT in the daily rotation. Only the regional
-  disciplines rotate, through `RATE_LIMIT_CREDITS` minus one per host country.
+  disciplines rotate, through what the country queries leave of
+  `RATE_LIMIT_CREDITS` — counted after they run, because a thin country is
+  topped up with a second query.
+- **BBICC asks for Serbia by name**, and is topped up when that comes back thin
+  (`THIN_COUNTRY_RESULT`). `country=rs` alone returned EU-wide Euronews pieces,
+  because Serbia's English business press is small. The top-up reuses the
+  strategy set the other five international competitions share, so Serbian news
+  is preferred rather than exclusive. Its keyword ORDER is load-bearing:
+  buildQuery takes the first five that fit, so the Serbian terms come first.
 
 ## Ingest schedule
 - **Ingest runs ONCE PER DAY**, `0 11 * * *`. This is an owner decision, not an

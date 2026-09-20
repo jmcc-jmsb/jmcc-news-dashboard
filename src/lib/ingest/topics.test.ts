@@ -17,10 +17,15 @@ const MIGRATIONS = [
   '20260828000004_news_topics_retune.sql',        // the 11 JDC/JDCC disciplines
   '20260829000006_competition_discipline_topics.sql', // SMNG, FO and HM
   '20260919000008_international_competition_topics.sql', // the six international competitions
+  '20260920000009_bbicc_serbia_focus.sql',        // retunes bbicc only
 ];
 
 function shippedTopics(): { discipline: string; keywords: string[] }[] {
-  const topics: { discipline: string; keywords: string[] }[] = [];
+  /* Keyed, and applied in file order, so a later migration that retunes one
+     discipline REPLACES its row the way the database does. Collecting into a
+     list instead would leave two rows for bbicc, and the registry check below
+     would fail on a duplicate rather than on a real gap. */
+  const topics = new Map<string, string[]>();
   for (const file of MIGRATIONS) {
     const sql = readFileSync(
       new URL(`../../../supabase/migrations/${file}`, import.meta.url),
@@ -33,10 +38,16 @@ function shippedTopics(): { discipline: string; keywords: string[] }[] {
     for (const [, discipline, body] of sql.matchAll(
       /\('([a-z0-9-]+)',\s*array\[([\s\S]*?)\],\s*'seed'\)/g,
     )) {
-      topics.push({ discipline, keywords: [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]) });
+      topics.set(discipline, [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]));
+    }
+    /* The update form: `update … set keywords = array[…] … where discipline = 'x'`. */
+    for (const [, body, discipline] of sql.matchAll(
+      /set keywords = array\[([\s\S]*?)\][\s\S]*?where discipline = '([a-z0-9-]+)'/g,
+    )) {
+      topics.set(discipline, [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]));
     }
   }
-  return topics;
+  return [...topics].map(([discipline, keywords]) => ({ discipline, keywords }));
 }
 
 const TOPICS = shippedTopics();
@@ -108,7 +119,7 @@ describe('shipped discipline keywords', () => {
     ['hicc', 'Retail chain names a turnaround plan after a weak quarterly results print', ''],
     ['micc', 'Streaming firm rewrites its business model as the technology sector consolidates', ''],
     ['unicc', 'European commission clears a cross-border joint venture', ''],
-    ['bbicc', 'Government revives a privatization of the state telecom operator', ''],
+    ['bbicc', 'Belgrade court clears the sale of a Serbian telecom operator', ''],
     ['eller', 'Board of directors opens an ethics investigation after a whistleblower complaint', ''],
   ];
 

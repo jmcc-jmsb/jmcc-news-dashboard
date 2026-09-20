@@ -101,6 +101,10 @@ export interface NewsDataOptions {
    *  international competition. Costs no extra credit — it filters the same
    *  single request. */
   country?: string;
+  /** NewsData's own section, e.g. 'business'. Cuts sport and general news at
+   *  the source: the keyword match runs over the whole article text, so
+   *  'credit' or 'market' pulls in a games schedule often enough to notice. */
+  category?: string;
   signal?: AbortSignal;
 }
 
@@ -108,7 +112,7 @@ export interface NewsDataOptions {
 export async function fetchNewsData(
   query: string,
   ledger: CreditLedger,
-  { country, signal }: NewsDataOptions = {},
+  { country, category, signal }: NewsDataOptions = {},
 ): Promise<RawItem[]> {
   if (!NEWSDATA_API_KEY) throw new Error('NEWSDATA_API_KEY is not set');
   // An empty q returns untargeted news, which runIngest would tag with the
@@ -122,6 +126,7 @@ export async function fetchNewsData(
   url.searchParams.set('q', query);
   url.searchParams.set('language', 'en');
   if (country) url.searchParams.set('country', country);
+  if (category) url.searchParams.set('category', category);
 
   const res = await fetch(url, { signal });
   if (res.status === 429) {
