@@ -2,17 +2,30 @@
 // ABOUTME: Selecting one swaps the entire discipline set below it; sections never share a discipline.
 
 import { useEffect, useRef } from 'react';
-import { COMPETITIONS } from '../../lib/competitions';
+import { COMPETITIONS, eventsCovering } from '../../lib/competitions';
 import { revealActivePill } from '../../lib/pills';
 
 interface Props {
   competition: string;
   setCompetition: (id: string) => void;
+  /** Only used to narrow the events strip in a section of many events. */
+  discipline: string;
   disabled: boolean;
 }
 
-export function CompetitionBar({ competition, setCompetition, disabled }: Props) {
+export function CompetitionBar({ competition, setCompetition, discipline, disabled }: Props) {
   const active = COMPETITIONS.find((c) => c.id === competition);
+
+  /* Two events fit on the line and say something the pills do not: JDC and
+     JDCC share a section, so a delegate needs to see both. The International
+     section is six events whose pills ARE the events — listing all six in full
+     wrapped to four lines and pushed the pills into three rows — so there the
+     strip follows the selection instead. */
+  const events = active
+    ? active.events.length > 2
+      ? eventsCovering(active, discipline)
+      : active.events
+    : [];
   const row = useRef<HTMLDivElement>(null);
 
   useEffect(() => revealActivePill(row.current), [competition]);
@@ -40,14 +53,18 @@ export function CompetitionBar({ competition, setCompetition, disabled }: Props)
 
         {/* Where the delegation actually travels. JDC and JDCC are two events
             in one section, so this is the only place the distinction shows. */}
-        {active && (
+        {events.length > 0 && (
           <span className="competition-events meta">
-            {active.events.map((e, i) => (
+            {events.map((e, i) => (
               <span key={e.slug}>
                 {i > 0 && ' · '}
-                <a href={e.url} target="_blank" rel="noopener noreferrer">
-                  {e.name}
-                </a>{' '}
+                {e.url ? (
+                  <a href={e.url} target="_blank" rel="noopener noreferrer">
+                    {e.name}
+                  </a>
+                ) : (
+                  e.name
+                )}{' '}
                 {e.location}
               </span>
             ))}

@@ -11,7 +11,9 @@ const eventSchema = z
     slug: z.string().min(1),
     name: z.string().min(1),
     location: z.string().min(1),
-    url: z.url(),
+    /** Nullable: BBICC has no public site in the website's registry yet, and
+     *  inventing one would be worse than a name with no link. */
+    url: z.url().nullable(),
     /** This event's own news disciplines. May be a subset of the section's. */
     disciplines: z.array(z.string().min(1)),
   })

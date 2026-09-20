@@ -144,5 +144,73 @@
       "request-for-agency-proposal",
       "strategic-marketing"
     ]
+  },
+  "intl": {
+    "label": "International",
+    "blurb": "The case competitions JMCC travels to outside the regional circuit. Each pill carries business news from its host country, so global stories stay out of the Canadian discipline feeds.",
+    "events": [
+      {
+        "slug": "tubc-2026",
+        "name": "Thammasat Undergraduate Business Challenge",
+        "location": "Bangkok, Thailand",
+        "url": "https://tubc.page/",
+        "disciplines": [
+          "tubc"
+        ]
+      },
+      {
+        "slug": "eller-2026",
+        "name": "Collegiate Ethics Case Competition",
+        "location": "Tucson, United States",
+        "url": "https://eller.arizona.edu/departments-research/centers-labs/leadership-ethics/programs/cecc",
+        "disciplines": [
+          "eller"
+        ]
+      },
+      {
+        "slug": "hicc-2027",
+        "name": "Heavener International Case Competition",
+        "location": "Gainesville, United States",
+        "url": "https://warrington.ufl.edu/heavener-international-case-competition/",
+        "disciplines": [
+          "hicc"
+        ]
+      },
+      {
+        "slug": "micc-2027",
+        "name": "Marshall International Case Competition",
+        "location": "Los Angeles, United States",
+        "url": "https://marshallinternationalcasecomp.com",
+        "disciplines": [
+          "micc"
+        ]
+      },
+      {
+        "slug": "unicc-2027",
+        "name": "Universidad de Navarra International Case Competition",
+        "location": "Pamplona, Spain",
+        "url": "https://www.unav.edu/web/unicc",
+        "disciplines": [
+          "unicc"
+        ]
+      },
+      {
+        "slug": "bbicc-2027",
+        "name": "Belgrade Business International Case Competition",
+        "location": "Belgrade, Serbia",
+        "url": null,
+        "disciplines": [
+          "bbicc"
+        ]
+      }
+    ],
+    "disciplines": [
+      "tubc",
+      "eller",
+      "hicc",
+      "micc",
+      "unicc",
+      "bbicc"
+    ]
   }
 }

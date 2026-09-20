@@ -63,6 +63,19 @@ export const DISCIPLINES = [
   { id: 'international-marketing', label: 'International Marketing', competition: 'hm' },
   { id: 'request-for-agency-proposal', label: 'Request for Agency Proposal', competition: 'hm' },
   { id: 'strategic-marketing', label: 'Strategic Marketing', competition: 'hm' },
+
+  /* ── International — one entry per case competition on the circuit ──
+     These are competitions, not subject areas, which is why they carry a
+     `country`: their feed is business news from the host country, where the
+     four regional sections read Canadian news. The ids are the abbreviations
+     delegates actually use, and they stay disjoint from the other 33.
+     Source: jmcc-website src/data/competitions.json, "internationals". */
+  { id: 'tubc', label: 'TUBC', competition: 'intl', country: 'th' },
+  { id: 'eller', label: 'Eller', competition: 'intl', country: 'us' },
+  { id: 'hicc', label: 'HICC', competition: 'intl', country: 'us' },
+  { id: 'micc', label: 'MICC', competition: 'intl', country: 'us' },
+  { id: 'unicc', label: 'UNICC', competition: 'intl', country: 'es' },
+  { id: 'bbicc', label: 'BBICC', competition: 'intl', country: 'rs' },
 ] as const;
 
 /* Derived from the array rather than hand-written beside it. The two used to be
@@ -77,9 +90,18 @@ export interface Discipline {
   id: DisciplineId;
   label: string;
   competition: CompetitionId;
+  /** ISO 3166-1 alpha-2 host country, on the international competitions only.
+   *  Ingest routes one country-filtered query per distinct value. */
+  country?: string;
 }
 
 export const DISCIPLINE_IDS: readonly DisciplineId[] = DISCIPLINES.map((d) => d.id);
+
+/** The same registry, typed as Discipline. DISCIPLINES itself is `as const` so
+ *  the ids stay literal, which means its inferred union carries `country` on
+ *  the international members only — reading it off the array is a type error.
+ *  Anything that looks at `country` iterates this instead. */
+export const DISCIPLINE_REGISTRY: readonly Discipline[] = DISCIPLINES;
 
 export function labelFor(id: string): string {
   return DISCIPLINES.find((d) => d.id === id)?.label ?? '';
@@ -87,6 +109,16 @@ export function labelFor(id: string): string {
 
 export function isDisciplineId(value: string): value is DisciplineId {
   return DISCIPLINES.some((d) => d.id === value);
+}
+
+/** The country a competition's news is drawn from, when it has one. Only the
+ *  international competitions do; the regional sections read Canadian news,
+ *  which ingest applies to every discipline without one. */
+export function countryOf(id: string): string | undefined {
+  // Typed as Discipline first: only the international entries carry `country`,
+  // so the literal union it infers has the property on some members only.
+  const discipline: Discipline | undefined = DISCIPLINES.find((d) => d.id === id);
+  return discipline?.country;
 }
 
 /** The competition a discipline belongs to. Total, because ids are disjoint. */
