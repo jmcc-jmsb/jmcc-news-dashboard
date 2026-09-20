@@ -42,6 +42,18 @@ interface TopicRow {
  *  in Quebec, Ontario or New Brunswick, so their news is Canadian. */
 const REGIONAL_COUNTRY = 'ca';
 
+/** NewsData's own section. The first country-filtered run still tagged an Asian
+ *  Games schedule into `finance`: the keyword match reads the whole article, so
+ *  'credit' and 'market' hit sport and general news. The country said where a
+ *  story came from; this says what it is about. */
+const NEWS_CATEGORY = 'business';
+
+/** Below this, a country's query is treated as having come up short and is
+ *  topped up once. A credit returns up to ten articles, so this is "thin", not
+ *  "empty": Serbia's English-language business press is small enough that
+ *  country=rs plus Serbian terms can return two or three. */
+const THIN_COUNTRY_RESULT = 5;
+
 /**
  * One run. Every stage is best-effort: a failing source is recorded and skipped
  * rather than aborting, because a run that dies on the first dead feed leaves
@@ -68,6 +80,11 @@ export async function runIngest(): Promise<IngestReport> {
   // Set once credits run out; every later NewsData query is counted, not sent.
   let creditsExhausted: string | null = null;
   let newsDataSkipped = 0;
+  /** Queries actually sent this window. Counted here rather than read off the
+   *  ledger: the ledger is charged inside fetchNewsData, so the budget left for
+   *  the rotation would depend on how a query was served rather than on how
+   *  many were asked for. */
+  let newsDataQueries = 0;
 
   // ── Keywords come from the database, not from a code constant (brief §3e) ──
   const { data: topicRows, error: topicErr } = await db
@@ -115,32 +132,22 @@ export async function runIngest(): Promise<IngestReport> {
     byCountry.set(country, [...(byCountry.get(country) ?? []), topic]);
   }
 
-  // There are more regional disciplines than credits left after the country
-  // queries, so each run takes the next window's worth in a fixed order and the
-  // rest wait. The start advances by a full window each day, so the ones left
-  // out differ daily and every discipline comes round within a few days. Sorted
-  // first: the database returns rows in no guaranteed order, and a changing
-  // order would let the same discipline be left out day after day.
-  //
-  // The country queries are NOT in the rotation. There are only four of them,
-  // and a competition feed that goes dark for a day or two before the team
-  // flies out is worse than a discipline waiting one more day.
-  const rotatingBudget = Math.max(RATE_LIMIT_CREDITS - byCountry.size, 0);
-  const ordered = [...regionalTopics].sort((a, b) => a.discipline.localeCompare(b.discipline));
-  const day = Math.floor(Date.parse(startedAt) / 86_400_000);
-  const start = ordered.length ? (day * rotatingBudget) % ordered.length : 0;
-  const scheduled = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, rotatingBudget);
-  const newsDataDeferred = ordered.length - scheduled.length;
-
-  /** One query, its articles tagged to each discipline it was asked for. */
-  const queryFor = async (name: string, keywords: string[], country: string, forDisciplines: string[]) => {
+  /** One query, its articles tagged to each discipline it was asked for.
+   *  Returns how many articles came back, or null if the query never ran. */
+  const queryFor = async (
+    name: string,
+    keywords: string[],
+    country: string,
+    forDisciplines: string[],
+  ): Promise<number | null> => {
     if (creditsExhausted) {
       newsDataSkipped++;
-      return;
+      return null;
     }
     const query = buildQuery(keywords.slice(0, 5));
+    newsDataQueries++;
     try {
-      const raw = await fetchNewsData(query, ledger, { country });
+      const raw = await fetchNewsData(query, ledger, { country, category: NEWS_CATEGORY });
       for (const item of raw) {
         for (const discipline of forDisciplines) {
           const norm = normalizeItem(item, discipline as DisciplineId, labelFor(discipline));
@@ -148,29 +155,62 @@ export async function runIngest(): Promise<IngestReport> {
           else rejected++;
         }
       }
+      return raw.length;
     } catch (err) {
       // Out of credits is not one more per-query error: it ends NewsData for
       // this run, and the failed query counts as skipped.
       if (err instanceof CreditCeilingError || err instanceof NewsDataQuotaError) {
         creditsExhausted = scrubError(err);
         newsDataSkipped++;
-        return;
+        return null;
       }
       sourceErrors.push({ name: `NewsData:${name}`, error: scrubError(err) });
+      return null;
     }
   };
 
   for (const [country, group] of byCountry) {
     // The group shares a query, so it shares keywords: each competition's own
     // set in registry order, deduped, and buildQuery takes what fits.
-    const keywords = [...new Set(group.flatMap((t) => t.keywords))];
-    await queryFor(
-      group.map((t) => t.discipline).join('+'),
-      keywords,
-      country,
-      group.map((t) => t.discipline),
-    );
+    const disciplines = group.map((t) => t.discipline);
+    const name = disciplines.join('+');
+    const found = await queryFor(name, [...new Set(group.flatMap((t) => t.keywords))], country, disciplines);
+
+    /* Serbia is why this exists. Its own terms — 'serbia', 'belgrade' — inside
+       country=rs describe a press small enough to return two or three business
+       stories a day, and a feed of three is a feed nobody opens. The top-up
+       re-asks the same country with the strategy set its sibling competitions
+       use, which is what filled BBICC with EU-wide coverage before. Serbian
+       news is therefore preferred, not exclusive, and the feed is never empty
+       for want of asking a second way. */
+    if (found !== null && found < THIN_COUNTRY_RESULT) {
+      const wider = [
+        ...new Set(intlTopics.filter((t) => !group.includes(t)).flatMap((t) => t.keywords)),
+      ];
+      if (wider.length > 0) await queryFor(`${name}:wider`, wider, country, disciplines);
+    }
   }
+
+  // Whatever the country queries left. Computed AFTER them, not from their
+  // count: a thin country is topped up with a second query, so the spend is
+  // known only once they have run.
+  //
+  // There are more regional disciplines than that, so each run takes the next
+  // window's worth in a fixed order and the rest wait. The start advances by a
+  // full window each day, so the ones left out differ daily and every
+  // discipline comes round within a few days. Sorted first: the database
+  // returns rows in no guaranteed order, and a changing order would let the
+  // same discipline be left out day after day.
+  //
+  // The country queries are NOT in the rotation. There are only four or five of
+  // them, and a competition feed that goes dark the week a team flies out is
+  // worse than a discipline waiting one more day.
+  const rotatingBudget = Math.max(RATE_LIMIT_CREDITS - newsDataQueries, 0);
+  const ordered = [...regionalTopics].sort((a, b) => a.discipline.localeCompare(b.discipline));
+  const day = Math.floor(Date.parse(startedAt) / 86_400_000);
+  const start = ordered.length ? (day * rotatingBudget) % ordered.length : 0;
+  const scheduled = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, rotatingBudget);
+  const newsDataDeferred = ordered.length - scheduled.length;
 
   for (const topic of scheduled) {
     await queryFor(topic.discipline, topic.keywords, REGIONAL_COUNTRY, [topic.discipline]);

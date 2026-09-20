@@ -166,6 +166,14 @@ function allDisciplines(fake = fakeDb) {
   return topics;
 }
 
+/** A full page of results, so a country query is never treated as thin. Ten is
+ *  what one NewsData credit returns. */
+function fullPages() {
+  vi.mocked(fetchNewsData).mockImplementation(async (query) =>
+    Array.from({ length: 10 }, (_, i) => raw(`${query} ${i}`, `https://example.com/${query}/${i}`)),
+  );
+}
+
 /** Runs ingest as if on the given UTC date and returns the discipline queries it sent. */
 async function queriesOn(date: string) {
   vi.setSystemTime(new Date(`${date}T11:00:00Z`));
@@ -177,7 +185,7 @@ async function queriesOn(date: string) {
 test('a run sends at most one rate-limit window of NewsData queries and defers the rest quietly', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   allDisciplines();
-  vi.mocked(fetchNewsData).mockResolvedValue([]);
+  fullPages();
 
   const { report, queries } = await queriesOn('2026-09-19');
 
@@ -195,7 +203,7 @@ test('a run sends at most one rate-limit window of NewsData queries and defers t
 test('the deferred disciplines change daily, so every discipline is queried within a few days', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   allDisciplines();
-  vi.mocked(fetchNewsData).mockResolvedValue([]);
+  fullPages();
 
   const day1 = (await queriesOn('2026-09-19')).queries;
   const day2 = (await queriesOn('2026-09-20')).queries;
@@ -213,7 +221,7 @@ test('the deferred disciplines change daily, so every discipline is queried with
 
 test('the day decides which disciplines run, not the order the database returns them in', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  vi.mocked(fetchNewsData).mockResolvedValue([]);
+  fullPages();
 
   allDisciplines();
   const asStored = (await queriesOn('2026-09-19')).queries;
@@ -259,7 +267,7 @@ test('regional discipline queries ask for Canadian news', async () => {
 test('the international competitions are queried once per host country, not once each', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   allDisciplines();
-  vi.mocked(fetchNewsData).mockResolvedValue([]);
+  fullPages();
 
   await queriesOn('2026-09-19');
 
@@ -292,7 +300,7 @@ test('a country query tags its articles to every competition held there', async 
 test('the international queries run every day; only the regional disciplines rotate', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   allDisciplines();
-  vi.mocked(fetchNewsData).mockResolvedValue([]);
+  fullPages();
 
   const regional = DISCIPLINES.filter((d) => d.competition !== 'intl');
   for (const date of ['2026-09-19', '2026-09-20', '2026-09-21']) {
@@ -303,5 +311,91 @@ test('the international queries run every day; only the regional disciplines rot
     expect(report.newsDataDeferred).toBe(regional.length - (RATE_LIMIT_CREDITS - 4));
     expect(report.sourceErrors).toEqual([]);
   }
+  vi.useRealTimers();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category and the Serbia-first fallback. The first live run under country
+// filtering still carried an Asian Games schedule in `finance`: the country was
+// right, the subject was not. And country=rs returned EU-wide Euronews pieces
+// rather than Serbian business news, because Serbia's English press is thin.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const categories = () =>
+  vi.mocked(fetchNewsData).mock.calls.map(([, , options]) => options?.category);
+
+test('discipline queries ask for business news; the sponsor query does not', async () => {
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  await runIngest();
+
+  // TOPICS is three JDC disciplines, then the sponsor. A sponsor is tracked
+  // wherever it turns up — a plant closure or a lawsuit is not filed under
+  // business everywhere — so that query stays unfiltered.
+  expect(categories()).toEqual(['business', 'business', 'business', undefined]);
+});
+
+/** Registry order puts Serbia last, so its query is the last country one. */
+const serbiaCalls = () =>
+  vi.mocked(fetchNewsData).mock.calls.filter(([, , options]) => options?.country === 'rs');
+
+test('a thin country result is topped up with one wider query, same competitions', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  // Serbia returns two articles; every other country fills its ten.
+  vi.mocked(fetchNewsData).mockImplementation(async (_q, _l, options) =>
+    options?.country === 'rs'
+      ? [raw('One Serbian story', 'https://example.com/rs-1'), raw('Another', 'https://example.com/rs-2')]
+      : Array.from({ length: 10 }, (_, i) => raw(`Story ${i}`, `https://example.com/${options?.country}-${i}`)),
+  );
+
+  await queriesOn('2026-09-20');
+
+  expect(serbiaCalls()).toHaveLength(2);
+  const [focused, wider] = serbiaCalls().map(([query]) => query);
+  expect(focused).not.toEqual(wider);
+  // Both tag the same competition; the wider one is a top-up, not a new feed.
+  const tagged = new Set(
+    (upserted.news_articles ?? [])
+      .filter((r) => String(r.url).startsWith('https://example.com/rs-'))
+      .map((r) => r.discipline),
+  );
+  expect([...tagged]).toEqual(['bbicc']);
+  vi.useRealTimers();
+});
+
+test('a country that fills its query is not queried twice', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockImplementation(async (_q, _l, options) =>
+    Array.from({ length: 10 }, (_, i) => raw(`Story ${i}`, `https://example.com/${options?.country}-${i}`)),
+  );
+
+  await queriesOn('2026-09-20');
+
+  expect(serbiaCalls()).toHaveLength(1);
+  vi.useRealTimers();
+});
+
+test('the regional rotation shrinks by exactly what the country queries spent', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  // Serbia comes up empty, so five country queries run instead of four. Every
+  // other country fills its page, which is what keeps them to one query each.
+  vi.mocked(fetchNewsData).mockImplementation(async (query, _l, options) =>
+    options?.country === 'rs'
+      ? []
+      : Array.from({ length: 10 }, (_, i) => raw(`${query} ${i}`, `https://example.com/${query}/${i}`)),
+  );
+
+  const { report } = await queriesOn('2026-09-20');
+
+  const countryQueries = countries().filter((c) => c !== 'ca').length;
+  expect(countryQueries).toBe(HOST_COUNTRIES.length + 1);
+  expect(vi.mocked(fetchNewsData)).toHaveBeenCalledTimes(RATE_LIMIT_CREDITS);
+  expect(report.newsDataDeferred).toBe(REGIONAL.length - (RATE_LIMIT_CREDITS - countryQueries));
+  // A top-up is routine, not a failure.
+  expect(report.sourceErrors).toEqual([]);
+  expect(report.newsDataSkipped).toBe(0);
   vi.useRealTimers();
 });
