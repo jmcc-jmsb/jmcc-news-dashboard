@@ -1,4 +1,4 @@
-// ABOUTME: One news article — source, relative time, discipline tag, title link, description.
+// ABOUTME: One news article — source, relative time, title link, description.
 // ABOUTME: Title and description only; never full article text (brief §10, Copyright).
 
 import type { FeedItem } from '../../../lib/types';
@@ -15,6 +15,10 @@ interface Props {
   q?: string;
 }
 
+/* No .discipline-tag here. The feed is always filtered to one discipline, so the
+   tag repeated the selected pill on every card — a dozen chips carrying nothing.
+   It stays in BookmarksSection and HistoryRow, where a list does span
+   disciplines and the tag is the only thing that says which. */
 export function ArticleCard({ item, saved, onToggle, q = '' }: Props) {
   return (
     <article className="card article-card">
@@ -26,7 +30,6 @@ export function ArticleCard({ item, saved, onToggle, q = '' }: Props) {
         </time>
         <span className="meta-spacer"></span>
         {item.aiRelevant && <AiBadge />}
-        <span className="discipline-tag">{item.discipline}</span>
       </div>
       <h3 className="card-title">
         <a href={item.url} target="_blank" rel="noopener noreferrer">
