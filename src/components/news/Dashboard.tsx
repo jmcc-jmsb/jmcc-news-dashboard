@@ -183,6 +183,7 @@ export default function Dashboard({ logoSrc }: Props) {
           <CompetitionBar
             competition={competition}
             setCompetition={changeCompetition}
+            discipline={discipline}
             disabled={tab === 'saved'}
           />
           <DisciplineBar

@@ -9,6 +9,11 @@ const phone = (width: number) => ({ viewport: { width, height: 844 }, isMobile: 
 // test that starts on skeletons measures a page a few hundred pixels long.
 const loadedArticle = (page: Page) => page.locator('.article-card:not(.skel)').first();
 
+/** Either outcome of a finished load. The International competitions have no
+ *  fixture articles, so their feed settles on the empty state, not an article. */
+const feedSettled = (page: Page) =>
+  page.locator('.article-card:not(.skel), .empty').first();
+
 async function openFeed(page: Page, path = '/') {
   await page.goto(path);
   await expect(loadedArticle(page)).toBeVisible();
@@ -63,7 +68,7 @@ for (const width of [360, 390]) {
         await page.locator(`${bar} .pill`).last().click();
         // Reload: the selection comes back from the URL, and must still be on screen.
         await page.reload();
-        await expect(loadedArticle(page)).toBeVisible();
+        await expect(feedSettled(page)).toBeVisible();
         const { left, right } = await page
           .locator(`${bar} .pill.active`)
           .evaluate((el) => el.getBoundingClientRect());

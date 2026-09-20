@@ -95,11 +95,20 @@ interface NewsDataArticle {
   pubDate?: string;
 }
 
+export interface NewsDataOptions {
+  /** ISO 3166-1 alpha-2, one country. Narrows the query to that country's
+   *  press: 'ca' for the regional sections, the host country for each
+   *  international competition. Costs no extra credit — it filters the same
+   *  single request. */
+  country?: string;
+  signal?: AbortSignal;
+}
+
 /** One query. `language=en` is non-negotiable (brief §1, §10). */
 export async function fetchNewsData(
   query: string,
   ledger: CreditLedger,
-  signal?: AbortSignal,
+  { country, signal }: NewsDataOptions = {},
 ): Promise<RawItem[]> {
   if (!NEWSDATA_API_KEY) throw new Error('NEWSDATA_API_KEY is not set');
   // An empty q returns untargeted news, which runIngest would tag with the
@@ -112,6 +121,7 @@ export async function fetchNewsData(
   url.searchParams.set('apikey', NEWSDATA_API_KEY);
   url.searchParams.set('q', query);
   url.searchParams.set('language', 'en');
+  if (country) url.searchParams.set('country', country);
 
   const res = await fetch(url, { signal });
   if (res.status === 429) {

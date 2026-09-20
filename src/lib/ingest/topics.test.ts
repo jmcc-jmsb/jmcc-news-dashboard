@@ -16,6 +16,7 @@ import type { RawItem } from './normalize';
 const MIGRATIONS = [
   '20260828000004_news_topics_retune.sql',        // the 11 JDC/JDCC disciplines
   '20260829000006_competition_discipline_topics.sql', // SMNG, FO and HM
+  '20260919000008_international_competition_topics.sql', // the six international competitions
 ];
 
 function shippedTopics(): { discipline: string; keywords: string[] }[] {
@@ -101,6 +102,14 @@ describe('shipped discipline keywords', () => {
     ['international-marketing', 'Coffee chain plans a market entry into three emerging markets', ''],
     ['hr-marketing', 'Bank rebuilds its employer brand and career site to attract candidates', ''],
     ['request-for-agency-proposal', 'Automaker launches an agency review and issues an RFP', ''],
+
+    // ── International — the strategy register, plus Eller's ethics one ──
+    ['tubc', 'Conglomerate plans a market entry into two emerging markets', ''],
+    ['hicc', 'Retail chain names a turnaround plan after a weak quarterly results print', ''],
+    ['micc', 'Streaming firm rewrites its business model as the technology sector consolidates', ''],
+    ['unicc', 'European commission clears a cross-border joint venture', ''],
+    ['bbicc', 'Government revives a privatization of the state telecom operator', ''],
+    ['eller', 'Board of directors opens an ethics investigation after a whistleblower complaint', ''],
   ];
 
   it.each(HEADLINES)('matches %s on a real headline', (discipline, title, description) => {

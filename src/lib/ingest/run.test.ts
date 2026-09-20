@@ -18,10 +18,14 @@ vi.mock('./rss', async (importOriginal) => ({
 const { supabaseAdmin } = await import('../supabase/admin');
 const { fetchNewsData, CreditCeilingError, NewsDataQuotaError, MAX_QUERY_LENGTH, RATE_LIMIT_CREDITS } =
   await import('./newsdata');
-const { DISCIPLINES } = await import('../disciplines');
+const { DISCIPLINES, DISCIPLINE_REGISTRY } = await import('../disciplines');
 const { fetchMarketaux } = await import('./marketaux');
 const { fetchFeed } = await import('./rss');
 const { runIngest } = await import('./run');
+
+/** The four regional sections rotate; the international competitions do not. */
+const REGIONAL = DISCIPLINES.filter((d) => d.competition !== 'intl');
+const HOST_COUNTRIES = [...new Set(DISCIPLINE_REGISTRY.flatMap((d) => (d.country ? [d.country] : [])))];
 
 const TOPICS = [
   { discipline: 'finance', keywords: ['bank'] },
@@ -157,6 +161,8 @@ function allDisciplines(fake = fakeDb) {
   const topics = DISCIPLINES.map((d) => ({ discipline: d.id, keywords: [d.id] }));
   const db = fake({ news_discipline_topics: topics, news_sponsors: [], news_sources: [] });
   vi.mocked(supabaseAdmin).mockReturnValue(db.db as never);
+  // Same handle the default fake publishes, so a test can read what was written.
+  upserted = db.upserted;
   return topics;
 }
 
@@ -177,7 +183,9 @@ test('a run sends at most one rate-limit window of NewsData queries and defers t
 
   expect(DISCIPLINES.length).toBeGreaterThan(RATE_LIMIT_CREDITS);
   expect(queries).toHaveLength(RATE_LIMIT_CREDITS);
-  expect(report.newsDataDeferred).toBe(DISCIPLINES.length - RATE_LIMIT_CREDITS);
+  // The host-country queries come off the top of the window; what is left over
+  // is what the regional disciplines rotate through.
+  expect(report.newsDataDeferred).toBe(REGIONAL.length - (RATE_LIMIT_CREDITS - HOST_COUNTRIES.length));
   // Planned deferral is not a failure, so it must not turn the cron's 200 into a 207.
   expect(report.sourceErrors).toEqual([]);
   expect(report.newsDataSkipped).toBe(0);
@@ -193,11 +201,13 @@ test('the deferred disciplines change daily, so every discipline is queried with
   const day2 = (await queriesOn('2026-09-20')).queries;
   expect(new Set(day1)).not.toEqual(new Set(day2));
 
+  // allDisciplines() keys each discipline's keywords to its own id, so a
+  // regional query reads as the id and a country group as its ids joined by OR.
   const seen = new Set<string>();
   for (let day = 19; day <= 29; day++) {
     for (const q of (await queriesOn(`2026-09-${day}`)).queries) seen.add(q);
   }
-  expect(seen).toEqual(new Set(DISCIPLINES.map((d) => d.id)));
+  for (const discipline of REGIONAL) expect([...seen]).toContain(discipline.id);
   vi.useRealTimers();
 });
 
@@ -225,4 +235,73 @@ test('a clean run queries every discipline and sponsor and reports nothing skipp
   expect(report.newsDataSkipped).toBe(0);
   expect(report.sourceErrors).toEqual([]);
   expect(report.upserted).toBe(2);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Country routing. The regional sections compete in Canada, so their feeds read
+// Canadian news; the six international competitions read news from their own
+// host country, one query per country rather than one per competition.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The country each call asked for, in call order. */
+const countries = () =>
+  vi.mocked(fetchNewsData).mock.calls.map(([, , options]) => options?.country);
+
+test('regional discipline queries ask for Canadian news', async () => {
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  await runIngest();
+
+  // TOPICS is finance/accounting/tax, all JDC, plus the sponsor query.
+  expect(countries().slice(0, 3)).toEqual(['ca', 'ca', 'ca']);
+});
+
+test('the international competitions are queried once per host country, not once each', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  await queriesOn('2026-09-19');
+
+  const intl = DISCIPLINE_REGISTRY.filter((d) => d.competition === 'intl');
+  const hosts = [...new Set(intl.map((d) => d.country))];
+  expect(intl).toHaveLength(6);
+  expect(hosts).toEqual(['th', 'us', 'es', 'rs']);
+  // Four queries cover six competitions: three of them are in the US.
+  expect(countries().filter((c) => c && c !== 'ca').sort()).toEqual([...hosts].sort());
+  vi.useRealTimers();
+});
+
+test('a country query tags its articles to every competition held there', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockImplementation(async (_query, _ledger, options) =>
+    options?.country === 'us' ? [raw('A US business story', 'https://example.com/us-story')] : [],
+  );
+
+  await queriesOn('2026-09-19');
+
+  const tagged = (upserted.news_articles ?? [])
+    .filter((r) => r.url === 'https://example.com/us-story')
+    .map((r) => r.discipline)
+    .sort();
+  expect(tagged).toEqual(['eller', 'hicc', 'micc']);
+  vi.useRealTimers();
+});
+
+test('the international queries run every day; only the regional disciplines rotate', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  allDisciplines();
+  vi.mocked(fetchNewsData).mockResolvedValue([]);
+
+  const regional = DISCIPLINES.filter((d) => d.competition !== 'intl');
+  for (const date of ['2026-09-19', '2026-09-20', '2026-09-21']) {
+    const { report } = await queriesOn(date);
+    // Four host-country queries on top of the rotating regional ones.
+    expect(countries().filter((c) => c !== 'ca')).toHaveLength(4);
+    expect(vi.mocked(fetchNewsData)).toHaveBeenCalledTimes(RATE_LIMIT_CREDITS);
+    expect(report.newsDataDeferred).toBe(regional.length - (RATE_LIMIT_CREDITS - 4));
+    expect(report.sourceErrors).toEqual([]);
+  }
+  vi.useRealTimers();
 });
