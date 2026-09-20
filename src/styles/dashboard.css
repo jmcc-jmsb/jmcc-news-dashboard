@@ -72,8 +72,8 @@
   --ink-soft:    #c8c5bf;
   --ink-mute:    #d8af74;
 
-  --line:        #292826;
-  --line-strong: #403f3c;
+  --line:        #3a3833;
+  --line-strong: #565350;
 
   --accent:      #fabb20;
   --accent-soft: #382c0f;
@@ -82,7 +82,7 @@
 
   --mark:        #fabb20;
 
-  --shadow-card: 0 1px 0 #292826;
+  --shadow-card: 0 1px 0 #3a3833;
 }
 
 * { box-sizing: border-box; }
@@ -261,15 +261,17 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* Sits above the discipline pills. Deliberately NOT sticky: the discipline bar
    below it already is, and stacking two sticky rows eats a third of a phone
    viewport before any news appears. */
+/* Shares the discipline bar's surface and has no rule of its own: the two rows
+   are one toolbar with two levels, and a border between them read as a third
+   stacked bar. The discipline bar below carries the single closing rule. */
 .competition-bar {
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--line);
+  background: var(--bg-sunken);
 }
 .competition-bar.is-disabled { opacity: 0.5; pointer-events: none; }
 .competition-bar-inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: 10px var(--gutter);
+  padding: 10px var(--gutter) 4px;
   display: flex;
   align-items: baseline;
   gap: 18px;
@@ -297,26 +299,31 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .discipline-bar-inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: 12px var(--gutter);
+  padding: 8px var(--gutter) 12px;
   display: flex;
   align-items: baseline;
   gap: 18px;
 }
 .dl-label { color: var(--ink-mute); flex-shrink: 0; font-family: var(--font-sans); font-weight: 600; font-size: 11px; }
 .pills { display: flex; gap: 4px; flex-wrap: wrap; }
+/* Eleven outlined pills read as eleven boxes and drowned the one that was
+   selected. The resting chip is a quiet raised surface instead: still a control
+   on a touch screen, where there is no hover to reveal anything. The
+   transparent border is kept so hover adds no width and nothing shifts. */
 .pill {
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-soft);
-  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  border: 1px solid transparent;
   white-space: nowrap;
   transition: all .12s;
 }
 /* Not on .active: this selector outranks .pill.active, so hovering the selected
    pill (or tapping it: phones leave :hover on the last tap) turned its label
    --ink on the accent fill — black on maroon, cream on gold. */
-.pill:hover:not(:disabled):not(.active) { color: var(--ink); border-color: var(--line-strong); }
+.pill:hover:not(:disabled):not(.active) { color: var(--ink); border-color: var(--line); }
 .pill.active {
   background: var(--accent);
   color: var(--bg);
@@ -472,7 +479,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .card-title a:hover { background-size: 100% 1.5px; }
 
-.card-desc { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 14px; text-wrap: pretty; }
+.card-desc {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0 0 14px;
+  /* 66ch, not the column width: at 1280 the feed column runs past 95 characters
+     a line, well past the 65-75 a reader scans comfortably. */
+  max-width: 66ch;
+  text-wrap: pretty;
+}
+
+/* The lead story. Twelve identical 16px titles gave the feed no entry point, so
+   the first card is set larger -- still Montserrat, because Unbounded is
+   display-only and a headline here is body copy that happens to be big. */
+.article-list > .article-card:first-child .card-title { font-size: 22px; }
+.article-list > .article-card:first-child .card-desc  { font-size: 15px; }
 
 .card-foot {
   display: flex; align-items: center; justify-content: space-between;
@@ -546,10 +568,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 @media (max-width: 980px) { .col-rail { position: static; } }
 
+/* No box: the report cards carry their own maroon left rule and the head has a
+   rule under it, so a surrounding panel only added a second slab beside the
+   feed. The head rule now runs the full column, masthead-style. */
 .rail-block {
-  background: var(--bg-elev);
-  border: 1px solid var(--line);
-  padding: 24px;
+  padding: 0;
 }
 .rail-head { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .rail-title {
@@ -565,6 +588,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* report cards — left maroon rule, no brand colours */
 .report-list { display: flex; flex-direction: column; gap: 4px; }
 .report-card {
+  background: transparent;
   padding: 14px 0 14px 14px;
   border-left: 2px solid var(--accent);
   border-bottom: 1px solid var(--line);
