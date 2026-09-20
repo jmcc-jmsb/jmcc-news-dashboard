@@ -10,6 +10,12 @@ import '../styles/dashboard.css';
 // showing the old icon. COPIED from jmcc-website; re-copy by hand (HANDOFF).
 import favicon from '../assets/brand/favicon.png';
 
+/* Vercel's own, and both are inert off Vercel: the scripts post to
+   /_vercel/insights, which only exists on a Vercel deployment, so `npm run dev`
+   and the e2e run render the elements and send nothing. */
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
+
 interface Props {
   title: string;
   description: string;
@@ -56,5 +62,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://news.wecomp
   </head>
   <body>
     <slot />
+    <Analytics />
+    <SpeedInsights />
   </body>
 </html>
